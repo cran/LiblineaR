@@ -1,7 +1,7 @@
 94d55d512a9ba36caa9b7df079bae19f *COPYING
-5c5645096093751285fd11bc6f38fbef *DESCRIPTION
-2a3848fae8345253c1489ad4d23578e4 *NAMESPACE
-67c766938a069b96e7cfa3568cb8d665 *NEWS
+4b01bb7f3eab24ba60b90a6713c2e6f7 *DESCRIPTION
+63a0850e7354d3533094c05e88a44219 *NAMESPACE
+b6272d5601c3da1d75e6c496c430f119 *NEWS
 9256efc9da78e0b847a5e10adefbf931 *R/LiblineaR.R
 fa87da21d6c94fa0aae009d99fc80fcf *R/heuristicC.R
 53ef777be39f5900d65640aa8a19ce86 *R/predict.R
@@ -12,10 +12,10 @@ fa87da21d6c94fa0aae009d99fc80fcf *R/heuristicC.R
 18857467d007ceb7b39a72acb10a9754 *man/predict.LiblineaR.Rd
 f80de2889856cba0512e5377926af1aa *src/Makevars.win
 955479d7720638242d2f18b94d133f5d *src/init.c
-28dd627ca40aba730c5b5ab53e552c8b *src/linear.cpp
+c83bb192fc5af02a4e678e242a73ec50 *src/linear.cpp
 5b8ebb198eacd03fc3754de3c6123710 *src/linear.h
-c243d8a9a4e7e94778d7192572a12541 *src/predictLinear.c
-e0df4839bab9e1ea328bd4351a905ed0 *src/trainLinear.c
+07d5ba6754459c5a6e6647bd6daaa05e *src/predictLinear.c
+3417ebfc8e5ab8d9de243b2f2490bc4c *src/trainLinear.c
 d3aebb3a7e112af679eb9357b66ae7df *src/tron.cpp
 1d4ae8c25b954b3107d3acca8e3a0f26 *src/tron.h
 5a09148f45698cd8da0b752b484e1fa6 *tests/RSquared.R

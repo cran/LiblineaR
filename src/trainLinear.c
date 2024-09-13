@@ -10,7 +10,7 @@
 #include "linear.h"
 
 //#define Malloc(type,n) (type *)malloc((n)*sizeof(type))
-#define Malloc(type,n) (type *)Calloc(n,type)
+#define Malloc(type,n) (type *)R_Calloc(n,type)
 
 void print_null(const char *s) {}
 
@@ -86,9 +86,9 @@ void trainLinear(double *W_ret, int* labels_ret, double *X, double *Y, int *nbSa
 	
 	//No need to destroy param because its members are shallow copies of Wi and WiLabels
 	//destroy_param(&param);
-	Free(prob.y);
-	Free(prob.x);
-	Free(x_space);
+	R_Free(prob.y);
+	R_Free(prob.x);
+	R_Free(x_space);
 	
 	if(*verbose)
 		Rprintf("FREED SPACE\n");
@@ -165,7 +165,7 @@ double do_cross_validation(void)
 		res = 1.0*total_correct/prob.l;
 	}
 	
-	Free(target);
+	R_Free(target);
 	return(res);
 }
 

@@ -9,7 +9,7 @@
 #include <errno.h>
 #include "linear.h"
 
-#define Malloc(type,n) (type *)Calloc(n,type)
+#define Malloc(type,n) (type *)R_Calloc(n,type)
 
 extern void print_null(const char *s);
 
@@ -107,9 +107,9 @@ void do_predict(double *Y, double *X, int *decisionValues, double *DecisionValue
 	}
 	//Rprintf("do_predict - done\n");
 	if(*proba)
-		Free(prob_estimates);
+		R_Free(prob_estimates);
 	if(*decisionValues)
-		Free(decision_values);
+		R_Free(decision_values);
 }
 
 /**
@@ -145,8 +145,8 @@ void predictLinear(double *Y, double *X, double *W, int *decisionValues, double 
 /*	Rprintf("predictLinear - done predict\n");*/
     // Because a shallow copy was done for W and labels, no need to free them, freeing model_ is enough.
 	//free_and_destroy_model(&model_);
-	Free(model_);
-	Free(x);
+	R_Free(model_);
+	R_Free(x);
 	return;
 }
 

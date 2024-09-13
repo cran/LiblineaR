@@ -1,5 +1,8 @@
 Note: In this file, LiblineaR refers to this R package, while LIBLINEAR refers to the original C/C++ library.
 
+2.10.24
+	- Updated calls in cpp files to match RS.h headers (Free -> R_Free, Realloc -> R_Realloc, Calloc -> R_Calloc). 
+	
 2.10.23
 	- Security patch: Better format input of Rprintf by providing a string literal in tron.cpp and linear.cpp
 	- Update in CITATION and DESCRIPTION to comply with new formatting specifications 

@@ -23,7 +23,7 @@ template <class S, class T> static inline void clone(T*& dst, S* src, int n)
 	memcpy((void *)dst,(void *)src,sizeof(T)*n);
 }
 // #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
-#define Malloc(type,n) (type *)Calloc(n,type)
+#define Malloc(type,n) (type *)R_Calloc(n,type)
 #define INF HUGE_VAL
 
 static void print_string_stdout(const char *s)
@@ -2081,8 +2081,8 @@ static void group_classes(const problem *prob, int *nr_class_ret, int **label_re
 			if(nr_class == max_nr_class)
 			{
 				max_nr_class *= 2;
-				label = (int *)Realloc(label,max_nr_class,int);
-				count = (int *)Realloc(count,max_nr_class,int);
+				label = (int *)R_Realloc(label,max_nr_class,int);
+				count = (int *)R_Realloc(count,max_nr_class,int);
 			}
 			label[nr_class] = this_label;
 			count[nr_class] = 1;
@@ -2125,7 +2125,7 @@ static void group_classes(const problem *prob, int *nr_class_ret, int **label_re
 	*label_ret = label;
 	*start_ret = start;
 	*count_ret = count;
-	Free(data_label);
+	R_Free(data_label);
 }
 
 static void train_one(const problem *prob, const parameter *param, double *w, double Cp, double Cn)
@@ -2405,19 +2405,19 @@ extern "C" model* train(const problem *prob, const parameter *param)
 					for(int j=0;j<w_size;j++)
 						model_->w[j*nr_class+i] = w[j];
 				}
-				Free(w);
+				R_Free(w);
 			}
 
 		}
 
-		Free(x);
-		Free(label);
-		Free(start);
-		Free(count);
-		Free(perm);
-		Free(sub_prob.x);
-		Free(sub_prob.y);
-		Free(weighted_C);
+		R_Free(x);
+		R_Free(label);
+		R_Free(start);
+		R_Free(count);
+		R_Free(perm);
+		R_Free(sub_prob.x);
+		R_Free(sub_prob.y);
+		R_Free(weighted_C);
 	}
 	return model_;
 }
@@ -2473,11 +2473,11 @@ extern "C" void cross_validation(const problem *prob, const parameter *param, in
 		for(j=begin;j<end;j++)
 			target[perm[j]] = predict(submodel,prob->x[perm[j]]);
 		free_and_destroy_model(&submodel);
-		Free(subprob.x);
-		Free(subprob.y);
+		R_Free(subprob.x);
+		R_Free(subprob.y);
 	}
-	Free(fold_start);
-	Free(perm);
+	R_Free(fold_start);
+	R_Free(perm);
 }
 
 extern "C" void find_parameter_C(const problem *prob, const parameter *param, int nr_fold, double start_C, double max_C, double *best_C, double *best_rate)
@@ -2619,17 +2619,17 @@ extern "C" void find_parameter_C(const problem *prob, const parameter *param, in
 
 	if(param1.C > max_C && max_C > start_C) 
 		info("warning: maximum C reached.\n");
-	Free(fold_start);
-	Free(perm);
-	Free(target);
+	R_Free(fold_start);
+	R_Free(perm);
+	R_Free(target);
 	for(i=0; i<nr_fold; i++)
 	{
-		Free(subprob[i].x);
-		Free(subprob[i].y);
-		Free(prev_w[i]);
+		R_Free(subprob[i].x);
+		R_Free(subprob[i].y);
+		R_Free(prev_w[i]);
 	}
-	Free(prev_w);
-	Free(subprob);
+	R_Free(prev_w);
+	R_Free(subprob);
 }
 
 extern "C" double predict_values(const struct model *model_, const struct feature_node *x, double *dec_values)
@@ -2683,7 +2683,7 @@ extern "C" double predict(const model *model_, const feature_node *x)
 {
 	double *dec_values = Malloc(double, model_->nr_class);
 	double label=predict_values(model_, x, dec_values);
-	Free(dec_values);
+	R_Free(dec_values);
 	return label;
 }
 
@@ -2779,8 +2779,8 @@ extern "C" struct model *load_model(double *W, int *nbClass, int *nbDim, double 
 	{
 		Rprintf("ERROR: unknown solver type.\n");
 
-		Free(model_->label);
-		Free(model_);
+		R_Free(model_->label);
+		R_Free(model_);
 		return NULL;
 	}
 	model_->param.solver_type=*type;
@@ -2864,9 +2864,9 @@ extern "C" double get_decfun_bias(const struct model *model_, int label_idx)
 extern "C" void free_model_content(struct model *model_ptr)
 {
 	if(model_ptr->w != NULL)
-		Free(model_ptr->w);
+		R_Free(model_ptr->w);
 	if(model_ptr->label != NULL)
-		Free(model_ptr->label);
+		R_Free(model_ptr->label);
 }
 
 extern "C" void free_and_destroy_model(struct model **model_ptr_ptr)
@@ -2875,18 +2875,18 @@ extern "C" void free_and_destroy_model(struct model **model_ptr_ptr)
 	if(model_ptr != NULL)
 	{
 		free_model_content(model_ptr);
-		Free(model_ptr);
+		R_Free(model_ptr);
 	}
 }
 
 extern "C" void destroy_param(parameter* param)
 {
 	if(param->weight_label != NULL)
-		Free(param->weight_label);
+		R_Free(param->weight_label);
 	if(param->weight != NULL)
-		Free(param->weight);
+		R_Free(param->weight);
 	if(param->init_sol != NULL)
-		Free(param->init_sol);
+		R_Free(param->init_sol);
 }
 
 extern "C" const char *check_parameter(const problem *prob, const parameter *param)
