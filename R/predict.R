@@ -67,10 +67,16 @@
 predict.LiblineaR<-function(object, newx, proba=FALSE, decisionValues=FALSE,...){
     
     # <Arg preparation>
-    
+
     sparse=FALSE
     sparse2=FALSE
-    
+
+    # A plain vector newx is treated as a single-feature input and transformed
+    # into an n x 1 matrix.
+    if(is.null(dim(newx)) && !inherits(newx, c("matrix.csr","matrix.csc","matrix.coo","dgCMatrix","dgRMatrix","dgTMatrix"))){
+        newx <- matrix(newx, ncol=1)
+    }
+
     if(sparse <- (inherits(newx, "matrix.csr") | inherits(newx, "matrix.csc") | inherits(newx, "matrix.coo"))){
         if(requireNamespace("SparseM",quietly=TRUE)){
             # trying to handle the sparse matrix case with SparseM package
@@ -117,8 +123,12 @@ predict.LiblineaR<-function(object, newx, proba=FALSE, decisionValues=FALSE,...)
         # Check presence of all features and drop irrelevant features (allow reordering)
         if (!all(fNames %in% colnames(newx)))
             stop("columns of 'test' and 'train' differ")
-        if(!identical(fNames,colnames(newx)))
+        if(!identical(fNames,colnames(newx))){
             newx <- newx[,fNames,drop=FALSE]
+            # p is the row stride the C code uses to index the flattened data
+            # buffer below, so it must match newx's actual column count here.
+            p <- length(fNames)
+        }
     }
     
     # Type 

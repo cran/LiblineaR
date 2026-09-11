@@ -1,12 +1,14 @@
 Encoding: UTF-8
+Language: en-US
 Package: LiblineaR
 Title: Linear Predictive Models Based on the LIBLINEAR C/C++ Library
-Version: 2.10-24
-Date: 2024-09-13
+Version: 2.10-25
+Date: 2026-09-10
 Authors@R: c(
         person("Thibault","Helleputte",email="thibault.helleputte@dnalytics.com",role=c("cre","aut","cph")),
         person("Jérôme","Paul",role=c("aut")),
-        person("Pierre","Gramme",role=c("aut")) )
+        person("Pierre","Gramme",role=c("aut")),
+        person("Chih-Jen","Lin",role=c("cph"),comment="Author of the bundled LIBLINEAR C/C++ code (src/linear.cpp, linear.h, tron.cpp, tron.h); see LICENSE.note") )
 Description: A wrapper around the LIBLINEAR C/C++ library for machine
         learning (available at
         <https://www.csie.ntu.edu.tw/~cjlin/liblinear/>). LIBLINEAR is
@@ -24,14 +26,20 @@ Description: A wrapper around the LIBLINEAR C/C++ library for machine
         particularly fast as compared to other libraries.
 License: GPL-2
 LazyLoad: yes
-Suggests: SparseM, Matrix
+Suggests: SparseM, Matrix, testthat (>= 3.0.0), knitr, rmarkdown,
+        spelling
 Imports: methods
-URL: <https://dnalytics.com/software/liblinear/>
+URL: <https://www.dnalytics.com/publications>
+Config/testthat/edition: 3
+RoxygenNote: 7.3.3
+VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2024-09-13 11:36:47 UTC; thibault
+Packaged: 2026-09-10 18:57:12 UTC; thibault
 Author: Thibault Helleputte [cre, aut, cph],
   Jérôme Paul [aut],
-  Pierre Gramme [aut]
+  Pierre Gramme [aut],
+  Chih-Jen Lin [cph] (Author of the bundled LIBLINEAR C/C++ code
+    (src/linear.cpp, linear.h, tron.cpp, tron.h); see LICENSE.note)
 Maintainer: Thibault Helleputte <thibault.helleputte@dnalytics.com>
 Repository: CRAN
-Date/Publication: 2024-09-13 12:10:07 UTC
+Date/Publication: 2026-09-11 06:00:14 UTC

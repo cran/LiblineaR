@@ -1,29 +1,28 @@
 year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date)
 vers <- paste("R package version", meta$Version)
 
+# Cite only the R package's authors/maintainer (aut/cre), not copyright-only
+# (cph) contributors such as the bundled LIBLINEAR library's author -- see
+# Authors@R in DESCRIPTION, which stays the single source of truth here.
+# meta$`Authors@R` comes back as the raw (unparsed) field text in some
+# citation() call paths and as an already-parsed `person` object in others;
+# handle both so this doesn't break depending on how it's invoked.
+authorsR <- meta$`Authors@R`
+if (!inherits(authorsR, "person")) authorsR <- eval(parse(text = authorsR))
+authors <- Filter(function(p) any(c("aut", "cre") %in% p$role), authorsR)
+
 bibentry(
 
-	bibtype="Manual",
+	bibtype = "Manual",
 
-	header="To cite package 'LiblineaR' in publications use:",
+	header = "To cite package 'LiblineaR' in publications use:",
 
-	textVersion =
-		paste("Thibault Helleputte, Pierre Gramme, Jérôme Paul ",
-		"(",year,"). 
-		LiblineaR: Linear Predictive Models Based On The Liblinear C/C++ Library.",
-		vers, ".", sep=""),
-	
-	
 	title = "LiblineaR: Linear Predictive Models Based on the LIBLINEAR C/C++ Library",
-	
-	author =  c(
-  		person("Thibault","Helleputte",email="thibault.helleputte@dnalytics.com",role=c("cre","aut","cph")),
-        	person("Jérôme","Paul",role=c("aut")),
-        	person("Pierre","Gramme",role=c("aut")) 
-        	),
-        
+
+	author = authors,
+
 	year = year,
-	
+
 	note = vers
-	
+
 )

@@ -116,7 +116,7 @@
 #' @return
 #' 	If \code{cross}>0, the average accuracy (classification) or mean square error (regression) computed over \code{cross} runs of cross-validation is returned.\cr\cr
 #' Otherwise, an object of class \code{"LiblineaR"} containing the fitted model is returned, including:
-#' \item{TypeDetail}{A string decsribing the type of model fitted, as determined by \code{type}.}
+#' \item{TypeDetail}{A string describing the type of model fitted, as determined by \code{type}.}
 #' \item{Type}{An integer corresponding to \code{type}.}
 #' \item{W}{A matrix with the model weights. If \code{bias} >0, \code{W} contains p+1 columns, the last being the bias term. The columns are named according to the names of \code{data}, if provided, or \code{"Wx"} where \code{"x"} ranges from 1 to the number of dimensions. The bias term is named \code{"Bias"}.If the number of classes is 2, or if in regression mode rather than classification, the matrix only has one row. If the number of classes is k>2 (classification), it has k rows. Each row i corresponds then to a linear model discriminating between class i and all the other classes. If there are more than 2 classes, rows are named according to the class i which is opposed to the other classes.}
 #' \item{Bias}{The value of \code{bias}}
@@ -283,7 +283,7 @@
 #' @export
 
 ### Implementation ####
-LiblineaR<-function(data, target, type=0, cost=1, epsilon=0.01, svr_eps=NULL, bias=1, wi=NULL, cross=0, verbose=FALSE, findC=FALSE, useInitC=TRUE, ...) {
+LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bias=1, wi=NULL, cross=0, verbose=FALSE, findC=FALSE, useInitC=TRUE, ...) {
 	# <Arg preparation>
   sparse=FALSE
   sparse2=FALSE
@@ -336,6 +336,19 @@ LiblineaR<-function(data, target, type=0, cost=1, epsilon=0.01, svr_eps=NULL, bi
 	}
 	rm(cc)
 
+	# Validate scalar numeric arguments before they reach the compiled solver:
+	# check_parameter() in src/trainLinear.c only Rprintf()s a message on an
+	# invalid value and returns, so an invalid cost/bias/epsilon/svr_eps must be
+	# caught here to get a proper R error instead of a silently wrong model.
+	if(!is.numeric(cost) || length(cost)!=1 || is.na(cost) || cost<=0)
+		stop("'cost' must be a single positive number.")
+	if(!(is.numeric(bias) || is.logical(bias)) || length(bias)!=1 || is.na(bias))
+		stop("'bias' must be a single (non-missing) number (or TRUE/FALSE, for backward compatibility).")
+	if(!is.null(epsilon) && (!is.numeric(epsilon) || length(epsilon)!=1 || is.na(epsilon)))
+		stop("'epsilon' must be NULL or a single number.")
+	if(!is.null(svr_eps) && (!is.numeric(svr_eps) || length(svr_eps)!=1 || is.na(svr_eps)))
+		stop("'svr_eps' must be NULL or a single number.")
+
 	# Bias
 	b = if(bias > 0) bias else -1 # to ensure backward compatibility with boolean
 	
@@ -354,9 +367,10 @@ LiblineaR<-function(data, target, type=0, cost=1, epsilon=0.01, svr_eps=NULL, bi
 		stop("Unknown model type ",type,". Expecting one of: ", paste(which(types!="")-1, collapse=", "))
 	isRegression = type>=11
 	
-	# Epsilon
-	if(is.null(epsilon) || epsilon<0){
-		# Will use LIBLINEAR default value for epsilon
+	# Epsilon: NULL or any non-positive value (including 0, which would otherwise
+	# be an unsatisfiable/hanging stopping criterion) routes to LIBLINEAR's own
+	# solver-appropriate default, applied in src/trainLinear.c's setup_params().
+	if(is.null(epsilon) || epsilon<=0){
 		epsilon = -1
 	}
 
@@ -412,7 +426,7 @@ LiblineaR<-function(data, target, type=0, cost=1, epsilon=0.01, svr_eps=NULL, bi
 			if(is.null(names(wi)))
 				stop("wi has to be a named vector!")
 			
-			if( !all(names(Wi)%in% names(wi)) )
+			if( !all(names(wi) %in% names(Wi)) )
 				stop("Mismatch between provided names for 'wi' and class labels.")
 			
 			for(i in 1:length(wi)){

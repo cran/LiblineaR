@@ -127,7 +127,13 @@ void predictLinear(double *Y, double *X, double *W, int *decisionValues, double 
 	set_print_string_function(&print_null);
 	
 	model_ = load_model(W, nbClass, nbDim, bias, labels, type);
-	
+	if(model_ == NULL){
+		// load_model() returns NULL for an out-of-range/unknown solver type.
+		// predictLinear is a registered native routine reachable outside
+		// predict.LiblineaR()'s own 'type' gate, so this must be checked here too.
+		error("Invalid model: unknown or unsupported solver type.");
+	}
+
 /*	Rprintf("model.W - 0x%08x\n",model_->w);*/
 /*	Rprintf("model.labels - 0x%08x\n",model_->label);*/
 /*	Rprintf("predictLinear - model loaded\n");*/

@@ -1,0 +1,179 @@
+---
+title: "Introduction to LiblineaR"
+author: "Thibault Helleputte, Jérôme Paul, Pierre Gramme"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to LiblineaR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+`LiblineaR` wraps the [LIBLINEAR](https://www.csie.ntu.edu.tw/~cjlin/liblinear/)
+C/C++ library for large-scale regularized linear classification and
+regression. This vignette is a practical guide to the parts of the API that
+are easy to get wrong: which `type` to pick, what `bias`/`epsilon`/`svr_eps`
+actually default to, how sparse input is handled, how class weighting
+(`wi`) works, and the two ways to search for a good `cost`.
+
+```{r setup}
+library(LiblineaR)
+data(iris)
+```
+
+## Choosing a `type`
+
+`type` selects both the loss function and the regularization. Two families:
+
+**Classification** (`type` 0-7):
+
+| `type` | Regularization | Loss | Solver |
+|---|---|---|---|
+| 0 | L2 | logistic | primal (Newton) |
+| 1 | L2 | L2-loss SVM (hinge²) | dual (coordinate descent) |
+| 2 | L2 | L2-loss SVM | primal (Newton) |
+| 3 | L2 | L1-loss SVM (hinge) | dual |
+| 4 | L2 | Crammer & Singer multi-class SVM | dual |
+| 5 | L1 | L2-loss SVM | dual |
+| 6 | L1 | logistic | dual |
+| 7 | L2 | logistic | dual |
+
+**Regression** (`type` 11-13), all L2-regularized support vector regression:
+
+| `type` | Loss | Solver |
+|---|---|---|
+| 11 | L2-loss (epsilon-insensitive²) | primal |
+| 12 | L2-loss | dual |
+| 13 | L1-loss | dual |
+
+Rules of thumb:
+
+- For an ordinary classification problem, `type=0` (logistic regression) or
+  `type=2` (L2-loss SVM) are the usual defaults; both give one weight vector
+  per class for multi-class problems via one-vs-rest, except `type=4`, which
+  always fits one weight vector *per class simultaneously* (relevant if you
+  read `$W`'s shape — see below).
+- `type=1`/`2` and `type=0`/`7` are the dual/primal formulations of the same
+  problem respectively, and converge to (numerically close to) the same
+  model — a useful sanity check if you're unsure which to trust.
+- L1-regularized types (`5`, `6`) push weights toward exact zero — useful for
+  feature selection on high-dimensional data.
+- For regression, `type=11` (primal) is usually fastest; `type=12`/`13`
+  differ in whether large errors are penalized quadratically or linearly.
+
+```{r types}
+x <- iris[, 1:4]
+y <- iris[, 5]
+
+m_lr  <- LiblineaR(x, y, type = 0)   # logistic regression
+m_svm <- LiblineaR(x, y, type = 2)   # L2-loss SVM
+
+dim(m_lr$W)   # one row per class (3 classes, multi-class problem)
+```
+
+## `bias`, `epsilon`, `svr_eps`: what the defaults actually mean
+
+**`bias`** (default `1`): if `bias > 0`, every row gets an extra constant
+feature appended with that value (`[data; bias]`) — this is what lets the
+model fit an intercept. If `bias <= 0`, no bias term is added at all (the
+decision boundary is forced through the origin). For backward compatibility,
+`bias=TRUE`/`FALSE` are also accepted (`TRUE` behaves like `1`, `FALSE` like
+`0`, i.e. no bias).
+
+**`epsilon`** (default `NULL`): the solver's stopping tolerance. Leave it at
+the default — `NULL` lets LIBLINEAR apply its own per-solver default (`0.01`
+for primal solvers, `0.1` for dual solvers; these differ because primal and
+dual solvers measure convergence on different quantities). Passing a numeric
+value overrides that for every solver uniformly, which is rarely what you
+want unless you're deliberately trading convergence tightness for speed.
+
+**`svr_eps`** (regression only, default `0.1` if left `NULL`): the width of
+the epsilon-insensitive tube — errors smaller than this aren't penalized at
+all. There's no universally good default; it depends on the scale of your
+target variable, so it's worth setting explicitly for regression:
+
+```{r svr_eps}
+xr <- as.matrix(iris[, 1:3])
+yr <- iris[, 4]
+m_svr <- LiblineaR(xr, yr, type = 11, svr_eps = 0.05)
+```
+
+## Sparse input
+
+`data` (and `predict()`'s `newx`) accept dense matrices/data frames, or
+sparse matrices of class `matrix.csr`/`matrix.csc`/`matrix.coo` (package
+**SparseM**) or `dgCMatrix`/`dgRMatrix`/`dgTMatrix` (package **Matrix**). The
+type is detected automatically — no separate argument needed. All six sparse
+classes and dense input give identical coefficients and predictions on the
+same data; pick whichever integrates better with the rest of your pipeline.
+
+```{r sparse}
+if (requireNamespace("Matrix", quietly = TRUE)) {
+  x_sparse <- Matrix::Matrix(as.matrix(x), sparse = TRUE)
+  m_sparse <- LiblineaR(x_sparse, y, type = 0)
+  identical(dim(m_sparse$W), dim(m_lr$W))
+}
+```
+
+## Class weighting with `wi`
+
+`wi` reweights each class's effective regularization constant
+(`C_class = cost * wi[class]`, default weight `1` for every class not
+named). This is the tool for imbalanced data: naming only the minority
+class with a higher weight pushes the solver to trade some overall accuracy
+for better recall on that class — a deliberate trade-off, not a bug, and one
+you should expect to see reflected in a *lower* raw accuracy alongside a
+*better* balanced accuracy.
+
+```{r wi}
+# Not all classes need to be named -- only the one(s) you want to reweight.
+m_weighted <- LiblineaR(x, y, type = 0, wi = c(setosa = 5))
+```
+
+## Finding a good `cost`: `heuristicC()`, `cross`, and `findC`
+
+Three complementary tools:
+
+- **`heuristicC(data)`**: a fast, closed-form heuristic (Joachims'
+  SVM-light heuristic) giving a reasonable starting point for `cost`,
+  computed directly from the data with no training involved.
+- **`cross=k`**: runs `k`-fold cross-validation at the given `cost` and
+  returns the CV accuracy (classification) or MSE (regression) as a single
+  number — no model object. Useful for evaluating one specific `cost`.
+- **`findC=TRUE`**: automatic search for a good `cost`, using repeated
+  cross-validation internally. Only supported for `type=0` and `type=2` (the
+  primal L2-regularized solvers); any other `type` raises an error. Returns
+  the best `cost` found, not a model — retrain with that value to get the
+  actual model.
+
+```{r cost}
+co <- heuristicC(x)
+co
+
+acc <- LiblineaR(x, y, type = 0, cost = co, cross = 5)
+acc
+
+best_cost <- LiblineaR(x, y, type = 0, findC = TRUE, cross = 5)
+best_cost
+
+m_final <- LiblineaR(x, y, type = 0, cost = best_cost)
+```
+
+## Predicting
+
+`predict()` accepts a vector (single feature) or a matrix/data frame with
+the same columns as training — reordered and with any extra columns
+dropped automatically, matched by column name if `newx` has names.
+
+```{r predict}
+p <- predict(m_final, x)
+mean(as.character(p$predictions) == as.character(y))
+
+# Probabilities are only available for logistic regression (type 0, 6, 7).
+p_proba <- predict(m_final, x, proba = TRUE)
+head(p_proba$probabilities)
+```

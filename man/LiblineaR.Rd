@@ -9,7 +9,7 @@ LiblineaR(
   target,
   type = 0,
   cost = 1,
-  epsilon = 0.01,
+  epsilon = NULL,
   svr_eps = NULL,
   bias = 1,
   wi = NULL,
@@ -132,7 +132,7 @@ error if both are present. Other extra parameters are ignored.}
 \value{
 If \code{cross}>0, the average accuracy (classification) or mean square error (regression) computed over \code{cross} runs of cross-validation is returned.\cr\cr
 Otherwise, an object of class \code{"LiblineaR"} containing the fitted model is returned, including:
-\item{TypeDetail}{A string decsribing the type of model fitted, as determined by \code{type}.}
+\item{TypeDetail}{A string describing the type of model fitted, as determined by \code{type}.}
 \item{Type}{An integer corresponding to \code{type}.}
 \item{W}{A matrix with the model weights. If \code{bias} >0, \code{W} contains p+1 columns, the last being the bias term. The columns are named according to the names of \code{data}, if provided, or \code{"Wx"} where \code{"x"} ranges from 1 to the number of dimensions. The bias term is named \code{"Bias"}.If the number of classes is 2, or if in regression mode rather than classification, the matrix only has one row. If the number of classes is k>2 (classification), it has k rows. Each row i corresponds then to a linear model discriminating between class i and all the other classes. If there are more than 2 classes, rows are named according to the class i which is opposed to the other classes.}
 \item{Bias}{The value of \code{bias}}

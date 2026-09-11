@@ -37,6 +37,23 @@ Installation
 This package should be installed using the `R CMD INSTALL' mechanism, see
 the R online help or R manuals for details on how to install packages.
 
+Building from a git clone
+--------------------------
+
+man/ (the .Rd documentation pages) is intentionally not tracked in git --
+it is a generated artifact of the roxygen2 comments in R/*.R. Before
+`R CMD build`/`R CMD check`/`R CMD INSTALL` on a fresh clone, regenerate it
+with either `./build.R` or, directly:
+
+    Rscript -e 'roxygen2::roxygenise()'
+
+Bug reports
+-----------
+
+This repository is not currently hosted anywhere public. To report a bug or
+ask a question, email the maintainer at the address given in DESCRIPTION's
+Authors@R (cre role).
+
 Mathematical Details
 --------------------
 

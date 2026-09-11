@@ -2779,7 +2779,8 @@ extern "C" struct model *load_model(double *W, int *nbClass, int *nbDim, double 
 	{
 		Rprintf("ERROR: unknown solver type.\n");
 
-		R_Free(model_->label);
+		// model_->label is only assigned further below, so only the struct
+		// itself needs freeing here.
 		R_Free(model_);
 		return NULL;
 	}

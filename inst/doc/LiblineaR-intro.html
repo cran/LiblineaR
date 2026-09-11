@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Thibault Helleputte, Jérôme Paul, Pierre Gramme" />
+
+<meta name="date" content="2026-09-10" />
+
+<title>Introduction to LiblineaR</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to LiblineaR</h1>
+<h4 class="author">Thibault Helleputte, Jérôme Paul, Pierre Gramme</h4>
+<h4 class="date">2026-09-10</h4>
+
+
+
+<p><code>LiblineaR</code> wraps the <a href="https://www.csie.ntu.edu.tw/~cjlin/liblinear/">LIBLINEAR</a> C/C++
+library for large-scale regularized linear classification and
+regression. This vignette is a practical guide to the parts of the API
+that are easy to get wrong: which <code>type</code> to pick, what
+<code>bias</code>/<code>epsilon</code>/<code>svr_eps</code> actually
+default to, how sparse input is handled, how class weighting
+(<code>wi</code>) works, and the two ways to search for a good
+<code>cost</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(LiblineaR)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(iris)</span></code></pre></div>
+<div id="choosing-a-type" class="section level2">
+<h2>Choosing a <code>type</code></h2>
+<p><code>type</code> selects both the loss function and the
+regularization. Two families:</p>
+<p><strong>Classification</strong> (<code>type</code> 0-7):</p>
+<table>
+<thead>
+<tr class="header">
+<th><code>type</code></th>
+<th>Regularization</th>
+<th>Loss</th>
+<th>Solver</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>L2</td>
+<td>logistic</td>
+<td>primal (Newton)</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>L2</td>
+<td>L2-loss SVM (hinge²)</td>
+<td>dual (coordinate descent)</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>L2</td>
+<td>L2-loss SVM</td>
+<td>primal (Newton)</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>L2</td>
+<td>L1-loss SVM (hinge)</td>
+<td>dual</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>L2</td>
+<td>Crammer &amp; Singer multi-class SVM</td>
+<td>dual</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>L1</td>
+<td>L2-loss SVM</td>
+<td>dual</td>
+</tr>
+<tr class="odd">
+<td>6</td>
+<td>L1</td>
+<td>logistic</td>
+<td>dual</td>
+</tr>
+<tr class="even">
+<td>7</td>
+<td>L2</td>
+<td>logistic</td>
+<td>dual</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Regression</strong> (<code>type</code> 11-13), all
+L2-regularized support vector regression:</p>
+<table>
+<thead>
+<tr class="header">
+<th><code>type</code></th>
+<th>Loss</th>
+<th>Solver</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>11</td>
+<td>L2-loss (epsilon-insensitive²)</td>
+<td>primal</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td>L2-loss</td>
+<td>dual</td>
+</tr>
+<tr class="odd">
+<td>13</td>
+<td>L1-loss</td>
+<td>dual</td>
+</tr>
+</tbody>
+</table>
+<p>Rules of thumb:</p>
+<ul>
+<li>For an ordinary classification problem, <code>type=0</code>
+(logistic regression) or <code>type=2</code> (L2-loss SVM) are the usual
+defaults; both give one weight vector per class for multi-class problems
+via one-vs-rest, except <code>type=4</code>, which always fits one
+weight vector <em>per class simultaneously</em> (relevant if you read
+<code>$W</code>’s shape — see below).</li>
+<li><code>type=1</code>/<code>2</code> and
+<code>type=0</code>/<code>7</code> are the dual/primal formulations of
+the same problem respectively, and converge to (numerically close to)
+the same model — a useful sanity check if you’re unsure which to
+trust.</li>
+<li>L1-regularized types (<code>5</code>, <code>6</code>) push weights
+toward exact zero — useful for feature selection on high-dimensional
+data.</li>
+<li>For regression, <code>type=11</code> (primal) is usually fastest;
+<code>type=12</code>/<code>13</code> differ in whether large errors are
+penalized quadratically or linearly.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>x <span class="ot">&lt;-</span> iris[, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>y <span class="ot">&lt;-</span> iris[, <span class="dv">5</span>]</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>m_lr  <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>)   <span class="co"># logistic regression</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>m_svm <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">2</span>)   <span class="co"># L2-loss SVM</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">dim</span>(m_lr<span class="sc">$</span>W)   <span class="co"># one row per class (3 classes, multi-class problem)</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; [1] 3 5</span></span></code></pre></div>
+</div>
+<div id="bias-epsilon-svr_eps-what-the-defaults-actually-mean" class="section level2">
+<h2><code>bias</code>, <code>epsilon</code>, <code>svr_eps</code>: what
+the defaults actually mean</h2>
+<p><strong><code>bias</code></strong> (default <code>1</code>): if
+<code>bias &gt; 0</code>, every row gets an extra constant feature
+appended with that value (<code>[data; bias]</code>) — this is what lets
+the model fit an intercept. If <code>bias &lt;= 0</code>, no bias term
+is added at all (the decision boundary is forced through the origin).
+For backward compatibility, <code>bias=TRUE</code>/<code>FALSE</code>
+are also accepted (<code>TRUE</code> behaves like <code>1</code>,
+<code>FALSE</code> like <code>0</code>, i.e. no bias).</p>
+<p><strong><code>epsilon</code></strong> (default <code>NULL</code>):
+the solver’s stopping tolerance. Leave it at the default —
+<code>NULL</code> lets LIBLINEAR apply its own per-solver default
+(<code>0.01</code> for primal solvers, <code>0.1</code> for dual
+solvers; these differ because primal and dual solvers measure
+convergence on different quantities). Passing a numeric value overrides
+that for every solver uniformly, which is rarely what you want unless
+you’re deliberately trading convergence tightness for speed.</p>
+<p><strong><code>svr_eps</code></strong> (regression only, default
+<code>0.1</code> if left <code>NULL</code>): the width of the
+epsilon-insensitive tube — errors smaller than this aren’t penalized at
+all. There’s no universally good default; it depends on the scale of
+your target variable, so it’s worth setting explicitly for
+regression:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>xr <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(iris[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>])</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>yr <span class="ot">&lt;-</span> iris[, <span class="dv">4</span>]</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>m_svr <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(xr, yr, <span class="at">type =</span> <span class="dv">11</span>, <span class="at">svr_eps =</span> <span class="fl">0.05</span>)</span></code></pre></div>
+</div>
+<div id="sparse-input" class="section level2">
+<h2>Sparse input</h2>
+<p><code>data</code> (and <code>predict()</code>’s <code>newx</code>)
+accept dense matrices/data frames, or sparse matrices of class
+<code>matrix.csr</code>/<code>matrix.csc</code>/<code>matrix.coo</code>
+(package <strong>SparseM</strong>) or
+<code>dgCMatrix</code>/<code>dgRMatrix</code>/<code>dgTMatrix</code>
+(package <strong>Matrix</strong>). The type is detected automatically —
+no separate argument needed. All six sparse classes and dense input give
+identical coefficients and predictions on the same data; pick whichever
+integrates better with the rest of your pipeline.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">requireNamespace</span>(<span class="st">&quot;Matrix&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) {</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  x_sparse <span class="ot">&lt;-</span> Matrix<span class="sc">::</span><span class="fu">Matrix</span>(<span class="fu">as.matrix</span>(x), <span class="at">sparse =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  m_sparse <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x_sparse, y, <span class="at">type =</span> <span class="dv">0</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="fu">identical</span>(<span class="fu">dim</span>(m_sparse<span class="sc">$</span>W), <span class="fu">dim</span>(m_lr<span class="sc">$</span>W))</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>}</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; &#39;as(&lt;matrix&gt;, &quot;dgRMatrix&quot;)&#39; is deprecated.</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; Use &#39;as(as(as(., &quot;dMatrix&quot;), &quot;generalMatrix&quot;), &quot;RsparseMatrix&quot;)&#39; instead.</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; See help(&quot;Deprecated&quot;) and help(&quot;Matrix-deprecated&quot;).</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
+<div id="class-weighting-with-wi" class="section level2">
+<h2>Class weighting with <code>wi</code></h2>
+<p><code>wi</code> reweights each class’s effective regularization
+constant (<code>C_class = cost * wi[class]</code>, default weight
+<code>1</code> for every class not named). This is the tool for
+imbalanced data: naming only the minority class with a higher weight
+pushes the solver to trade some overall accuracy for better recall on
+that class — a deliberate trade-off, not a bug, and one you should
+expect to see reflected in a <em>lower</em> raw accuracy alongside a
+<em>better</em> balanced accuracy.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Not all classes need to be named -- only the one(s) you want to reweight.</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>m_weighted <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">wi =</span> <span class="fu">c</span>(<span class="at">setosa =</span> <span class="dv">5</span>))</span></code></pre></div>
+</div>
+<div id="finding-a-good-cost-heuristicc-cross-and-findc" class="section level2">
+<h2>Finding a good <code>cost</code>: <code>heuristicC()</code>,
+<code>cross</code>, and <code>findC</code></h2>
+<p>Three complementary tools:</p>
+<ul>
+<li><strong><code>heuristicC(data)</code></strong>: a fast, closed-form
+heuristic (Joachims’ SVM-light heuristic) giving a reasonable starting
+point for <code>cost</code>, computed directly from the data with no
+training involved.</li>
+<li><strong><code>cross=k</code></strong>: runs <code>k</code>-fold
+cross-validation at the given <code>cost</code> and returns the CV
+accuracy (classification) or MSE (regression) as a single number — no
+model object. Useful for evaluating one specific <code>cost</code>.</li>
+<li><strong><code>findC=TRUE</code></strong>: automatic search for a
+good <code>cost</code>, using repeated cross-validation internally. Only
+supported for <code>type=0</code> and <code>type=2</code> (the primal
+L2-regularized solvers); any other <code>type</code> raises an error.
+Returns the best <code>cost</code> found, not a model — retrain with
+that value to get the actual model.</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>co <span class="ot">&lt;-</span> <span class="fu">heuristicC</span>(x)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>co</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.1274724</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>acc <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">cost =</span> co, <span class="at">cross =</span> <span class="dv">5</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>acc</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; [1] 0.8533333</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>best_cost <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">findC =</span> <span class="cn">TRUE</span>, <span class="at">cross =</span> <span class="dv">5</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>best_cost</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; [1] 256</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>m_final <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">cost =</span> best_cost)</span></code></pre></div>
+</div>
+<div id="predicting" class="section level2">
+<h2>Predicting</h2>
+<p><code>predict()</code> accepts a vector (single feature) or a
+matrix/data frame with the same columns as training — reordered and with
+any extra columns dropped automatically, matched by column name if
+<code>newx</code> has names.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">predict</span>(m_final, x)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">as.character</span>(p<span class="sc">$</span>predictions) <span class="sc">==</span> <span class="fu">as.character</span>(y))</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.98</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co"># Probabilities are only available for logistic regression (type 0, 6, 7).</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>p_proba <span class="ot">&lt;-</span> <span class="fu">predict</span>(m_final, x, <span class="at">proba =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">head</span>(p_proba<span class="sc">$</span>probabilities)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt;         setosa versicolor    virginica</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1,] 0.9193942 0.08060579 9.586857e-16</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7786324 0.22136764 1.461904e-14</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; [3,] 0.8535065 0.14649348 6.496319e-15</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; [4,] 0.7914231 0.20857690 4.005768e-14</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; [5,] 0.9355732 0.06442682 8.260311e-16</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; [6,] 0.9756365 0.02436346 2.803273e-15</span></span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

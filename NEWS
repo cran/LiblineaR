@@ -1,5 +1,24 @@
 Note: In this file, LiblineaR refers to this R package, while LIBLINEAR refers to the original C/C++ library.
 
+2.10.25
+	- Bug fixing: predict() sent a stale feature count to the C code whenever newx had extra columns beyond those used at training time (e.g. an ID or label column left in by mistake): the count was computed before newx was subset down to the training features, not after, misaligning every row after the first once the mismatch hit the compiled predictor. Found while adding a regression test for predict()'s column-reordering support, not by inspection alone. Fixed by recomputing the count after subsetting.
+	- Behavior change: default value of 'epsilon' changed from the literal 0.01 to NULL, so omitting 'epsilon' now reaches LIBLINEAR's own per-solver default (0.01 for primal solvers, 0.1 for dual solvers) as documented, instead of always 0.01. This changes convergence (and resulting coefficients) for existing callers who omit 'epsilon' on a dual solver (type 1, 3, 4, 7, 12 or 13). Explicit epsilon=0 now also routes to the solver default rather than an effectively unsatisfiable stopping criterion.
+	- Bug fixing: class-weight argument 'wi' validation was inverted, requiring every class to be named instead of validating that supplied names are legitimate class labels; the documented "partial wi" usage (not all classes need weights) always failed with "Mismatch between provided names for 'wi' and class labels." Fixed.
+	- Bug fixing: predict() now accepts a plain vector for 'newx' (converted to an n x 1 matrix), as documented; it previously failed with an unrelated "argument is of length zero" error.
+	- Bug fixing: 'cost', 'bias', 'epsilon' and 'svr_eps' are now validated at the R level before training; invalid values (e.g. cost<=0) previously reached the C code silently and returned a model with an all-zero weight matrix instead of an error.
+	- Bug fixing (C code): a training call rejected by internal parameter validation (e.g. cost<=0) leaked its input buffers; fixed.
+	- Bug fixing (C code): predicting with a corrupted/invalid model object could crash the R session (NULL pointer dereference in predictLinear); it now raises a clean R error instead.
+	- Bug fixing (C code): the dense-data allocation-size computation in the training C code used 32-bit arithmetic that could silently overflow for very large datasets (n*p approaching 2^31), risking memory corruption; it is now computed safely and errors clearly if the dataset is too large.
+	- Added a testthat-based test suite (tests/testthat/) alongside the existing tests/testLiblineaR.R: regression tests for all of the above, plus CORE numeric-correctness tests (reference coefficients, solver-equivalence and sparse/dense-equivalence checks).
+	- Added Chih-Jen Lin as copyright holder (cph) in Authors@R for the bundled LIBLINEAR C/C++ code, and a LICENSE.note file reproducing its BSD-3-Clause notice.
+	- Added src/Makevars (Unix), mirroring src/Makevars.win, to link BLAS/Fortran symbols explicitly instead of relying on implicit resolution.
+	- Simplified inst/CITATION to derive the author list from DESCRIPTION's Authors@R instead of a hand-maintained copy.
+	- Updated DESCRIPTION's URL field: the old one (dnalytics.com/software/liblinear/) is dead; now points to www.dnalytics.com/publications.
+	- Migrated the parameter sweep in tests/testLiblineaR.R (every classification type x weighting x row order x target encoding, every regression type x row order) into tests/testthat/test-train-types-classification.R and test-train-types-regression.R: the diagnostics that sweep always computed (dimOK, perfOK, sumOK, biasOK, levelsOK) are now actually asserted instead of sitting in an unused data frame. Doing so for the first time surfaced that two of the original pass thresholds (0.9 for weighted-perfNeg, 0.6 for weighted-multiclass perf) had never actually been achievable and were recalibrated against observed behavior; the rest held.
+	- Added tests for findC, predict(proba=), predict(decisionValues=), predict() column alignment, and cross-validation (dense and regression); migrated the sparse-matrix cross-validation smoke test to an asserted comparison against dense. tests/testLiblineaR.R and tests/RSquared.R removed, fully superseded by tests/testthat/.
+	- Test suite: 0 assertions -> 855, across 11 testthat files.
+	- Added a vignette (vignettes/LiblineaR-intro.Rmd): solver-type selection, what bias/epsilon/svr_eps actually default to, sparse input, class weighting with wi, and heuristicC()/cross/findC for choosing cost. Adds knitr and rmarkdown to Suggests, VignetteBuilder: knitr.
+
 2.10.24
 	- Updated calls in cpp files to match RS.h headers (Free -> R_Free, Realloc -> R_Realloc, Calloc -> R_Calloc). 
 	

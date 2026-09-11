@@ -7,6 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include "linear.h"
 
 //#define Malloc(type,n) (type *)malloc((n)*sizeof(type))
@@ -52,9 +53,14 @@ void trainLinear(double *W_ret, int* labels_ret, double *X, double *Y, int *nbSa
 		Rprintf("SETUP CHECK\n");
 	
 	error_msg = check_parameter(&prob,&param);
-	
+
 	if(error_msg){
 		Rprintf("ERROR: %s\n",error_msg);
+		// setup_problem() above already allocated prob.y/prob.x/x_space; free
+		// them on this path too, since it returns before the normal cleanup below.
+		R_Free(prob.y);
+		R_Free(prob.x);
+		R_Free(x_space);
 		return;
 	}
 	
@@ -287,16 +293,23 @@ void setup_problem(double *X, double *Y, int *nbSamples, int *nbDim, int *sparse
 	prob.y = Malloc(double,prob.l);
 	prob.x = Malloc(struct feature_node *,prob.l);
 	
-	int allocSize = (*nbDim)*prob.l+prob.l;
+	// Compute the x_space allocation size in a 64-bit-safe type: for large
+	// dense n*p (e.g. wide-feature genomics/text data), the equivalent 32-bit
+	// int arithmetic can overflow and under-allocate, so the size is checked
+	// against INT_MAX below before it is narrowed for the actual allocation.
+	double allocSizeD = (double)(*nbDim) * prob.l + prob.l;
 	if (*sparse > 0){
-		allocSize = rowindex[prob.l] + prob.l;
-		if (*verbose)
-			Rprintf("allocSize: %d\n",allocSize);
+		allocSizeD = (double)rowindex[prob.l] + prob.l;
 	}
-	
 	if(prob.bias >= 0)
-		allocSize += prob.l;
-		
+		allocSizeD += prob.l;
+	if(allocSizeD > (double) INT_MAX)
+		error("Dataset too large for LiblineaR: requested allocation (%.0f feature-node entries) exceeds the supported range.", allocSizeD);
+
+	int allocSize = (int) allocSizeD;
+	if (*sparse > 0 && *verbose)
+		Rprintf("allocSize: %d\n",allocSize);
+
 	 x_space = Malloc(struct feature_node,allocSize);
 	
 	
