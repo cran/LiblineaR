@@ -12,7 +12,7 @@
 
 <meta name="author" content="Thibault Helleputte, Jérôme Paul, Pierre Gramme" />
 
-<meta name="date" content="2026-09-10" />
+<meta name="date" content="2026-09-24" />
 
 <title>Introduction to LiblineaR</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Introduction to LiblineaR</h1>
 <h4 class="author">Thibault Helleputte, Jérôme Paul, Pierre Gramme</h4>
-<h4 class="date">2026-09-10</h4>
+<h4 class="date">2026-09-24</h4>
 
 
 
@@ -566,11 +566,11 @@ that value to get the actual model.</li>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a></span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>acc <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">cost =</span> co, <span class="at">cross =</span> <span class="dv">5</span>)</span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>acc</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; [1] 0.8533333</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; [1] 0.8466667</span></span>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
 <span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>best_cost <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">findC =</span> <span class="cn">TRUE</span>, <span class="at">cross =</span> <span class="dv">5</span>)</span>
 <span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>best_cost</span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; [1] 256</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; [1] 128</span></span>
 <span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a></span>
 <span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>m_final <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">cost =</span> best_cost)</span></code></pre></div>
 </div>
@@ -588,12 +588,12 @@ any extra columns dropped automatically, matched by column name if
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>p_proba <span class="ot">&lt;-</span> <span class="fu">predict</span>(m_final, x, <span class="at">proba =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">head</span>(p_proba<span class="sc">$</span>probabilities)</span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt;         setosa versicolor    virginica</span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1,] 0.9193942 0.08060579 9.586857e-16</span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7786324 0.22136764 1.461904e-14</span></span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; [3,] 0.8535065 0.14649348 6.496319e-15</span></span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; [4,] 0.7914231 0.20857690 4.005768e-14</span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; [5,] 0.9355732 0.06442682 8.260311e-16</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; [6,] 0.9756365 0.02436346 2.803273e-15</span></span></code></pre></div>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1,] 0.9185802 0.08141979 3.556204e-15</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7789812 0.22101876 5.032589e-14</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; [3,] 0.8535583 0.14644170 2.377264e-14</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; [4,] 0.7921747 0.20782530 1.437073e-13</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; [5,] 0.9348555 0.06514453 3.151504e-15</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; [6,] 0.9750323 0.02496774 9.534235e-15</span></span></code></pre></div>
 </div>
 
 

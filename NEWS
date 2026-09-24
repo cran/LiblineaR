@@ -1,5 +1,14 @@
 Note: In this file, LiblineaR refers to this R package, while LIBLINEAR refers to the original C/C++ library.
 
+2.10.26
+	- Bug fixing: LiblineaR()'s 'data' argument now accepts a plain vector for single-feature input (transformed to an n x 1 matrix), matching predict()'s 'newx' and the documented contract for both.
+	- Bug fixing: heuristicC() now supports all the sparse-matrix classes LiblineaR()/predict() do (matrix.csr/csc/coo from SparseM; dgCMatrix/dgRMatrix/dgTMatrix from Matrix) and a plain vector; it previously failed with a generic, unrelated R error on any of them. Also fixed its own example, which called the deprecated 'labels=' argument instead of 'target='.
+	- Bug fixing: a non-integer numeric classification 'target' (e.g. c(1.1, 1.9)) was silently truncated by as.integer() into potentially the same class code as a different value, with no error. Now rejected with a clear error message pointing at using a factor for class labels, or a regression 'type' (11-13) for continuous values. Whole-number numeric targets (e.g. 0/1) are unaffected.
+	- Bug fixing: predict() did not check that 'object' was actually a fitted "LiblineaR" model before using its internals; it now errors clearly instead of failing deeper (or worse, silently misreading unrelated list contents) on a malformed 'object'.
+	- Internal: the ~35-line sparse-matrix/vector dispatch logic for 'data' (LiblineaR()) and 'newx' (predict()) was duplicated verbatim between the two files; factored into a single shared internal helper (R/internal.R) so the two can no longer drift apart. No behavior change.
+	- Added tests for bias (numeric magnitude, boundary values), class weighting (wi shifts the decision boundary in the expected direction on an imbalanced dataset), heuristicC (closed-form check, agreement across all input classes), the remaining input-validation stop() sites (unknown type, wrong target dimension, target/data length mismatch, single-class target, unnamed wi, NA/Inf in data, non-integer numeric target, non-"LiblineaR" predict() object), and the exact per-solver value epsilon=NULL routes to (0.01 primal, 0.1 dual).
+	- Test suite: 855 assertions -> 888, across 16 testthat files.
+
 2.10.25
 	- Bug fixing: predict() sent a stale feature count to the C code whenever newx had extra columns beyond those used at training time (e.g. an ID or label column left in by mistake): the count was computed before newx was subset down to the training features, not after, misaligning every row after the first once the mismatch hit the compiled predictor. Found while adding a regression test for predict()'s column-reordering support, not by inspection alone. Fixed by recomputing the count after subsetting.
 	- Behavior change: default value of 'epsilon' changed from the literal 0.01 to NULL, so omitting 'epsilon' now reaches LIBLINEAR's own per-solver default (0.01 for primal solvers, 0.1 for dual solvers) as documented, instead of always 0.01. This changes convergence (and resulting coefficients) for existing callers who omit 'epsilon' on a dual solver (type 1, 3, 4, 7, 12 or 13). Explicit epsilon=0 now also routes to the solver default rather than an effectively unsatisfiable stopping criterion.
@@ -18,6 +27,7 @@ Note: In this file, LiblineaR refers to this R package, while LIBLINEAR refers t
 	- Added tests for findC, predict(proba=), predict(decisionValues=), predict() column alignment, and cross-validation (dense and regression); migrated the sparse-matrix cross-validation smoke test to an asserted comparison against dense. tests/testLiblineaR.R and tests/RSquared.R removed, fully superseded by tests/testthat/.
 	- Test suite: 0 assertions -> 855, across 11 testthat files.
 	- Added a vignette (vignettes/LiblineaR-intro.Rmd): solver-type selection, what bias/epsilon/svr_eps actually default to, sparse input, class weighting with wi, and heuristicC()/cross/findC for choosing cost. Adds knitr and rmarkdown to Suggests, VignetteBuilder: knitr.
+	- Fixed a typo in LiblineaR()'s documentation ("decsribing" -> "describing"). Adds spelling to Suggests and inst/WORDLIST for the package's technical vocabulary.
 
 2.10.24
 	- Updated calls in cpp files to match RS.h headers (Free -> R_Free, Realloc -> R_Realloc, Calloc -> R_Calloc). 

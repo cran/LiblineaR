@@ -8,7 +8,11 @@ heuristicC(data)
 }
 \arguments{
 \item{data}{a nxp data matrix. Each row stands for an example (sample, point)
-and each column stands for a dimension (feature, variable)}
+and each column stands for a dimension (feature, variable). A vector will
+be transformed to a n x 1 matrix. Sparse matrices of class matrix.csr,
+matrix.csc and matrix.coo from package SparseM are accepted, as are
+dgCMatrix, dgRMatrix and dgTMatrix from package Matrix -- the same classes
+accepted by \code{\link{LiblineaR}} and \code{\link{predict.LiblineaR}}.}
 }
 \value{
 A value for the C constant is returned, computed as follows:\cr
@@ -46,13 +50,13 @@ s=scale(xTrain,center=TRUE,scale=TRUE)
 t=6
 
 co=heuristicC(s)
-m=LiblineaR(data=s,labels=yTrain,type=t,cost=co,bias=TRUE,verbose=FALSE)
+m=LiblineaR(data=s,target=yTrain,type=t,cost=co,bias=TRUE,verbose=FALSE)
 
 
 }
 \references{
 \itemize{
-\item 
+\item
 T. Joachims\cr
 \emph{SVM light} (2002)\cr
 \url{http://svmlight.joachims.org}

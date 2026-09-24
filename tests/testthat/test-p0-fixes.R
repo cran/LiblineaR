@@ -34,6 +34,20 @@ test_that("omitting 'epsilon' reaches the same default as epsilon=NULL", {
   expect_error(LiblineaR(x2, y2, type = 1, epsilon = 0), NA)
 })
 
+test_that("epsilon=NULL reaches the exact documented per-solver default", {
+  # Only that omitted/explicit-NULL/epsilon=0 agree with each other was
+  # asserted above; this pins the actual numeric value each routes to,
+  # per the @param epsilon doc: 0.01 for primal types (0, 2, 5, 6), 0.1 for
+  # dual types (1, 3, 4, 7, 12, 13).
+  set.seed(1); m_null_primal <- LiblineaR(x2, y2, type = 0, epsilon = NULL)
+  set.seed(1); m_explicit_primal <- LiblineaR(x2, y2, type = 0, epsilon = 0.01)
+  expect_equal(m_null_primal$W, m_explicit_primal$W)
+
+  set.seed(1); m_null_dual <- LiblineaR(x2, y2, type = 1, epsilon = NULL)
+  set.seed(1); m_explicit_dual <- LiblineaR(x2, y2, type = 1, epsilon = 0.1)
+  expect_equal(m_null_dual$W, m_explicit_dual$W)
+})
+
 test_that("predict() accepts a plain vector newx for single-feature models", {
   # The doc promises a vector newx is transformed into an n x 1 matrix.
   x1 <- matrix(c(-5, -4, -3, -2, 2, 3, 4, 5), ncol = 1)

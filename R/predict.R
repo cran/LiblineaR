@@ -68,52 +68,13 @@ predict.LiblineaR<-function(object, newx, proba=FALSE, decisionValues=FALSE,...)
     
     # <Arg preparation>
 
-    sparse=FALSE
-    sparse2=FALSE
+    if(!inherits(object, "LiblineaR"))
+        stop("'object' must be a model of class 'LiblineaR', as returned by LiblineaR().")
 
-    # A plain vector newx is treated as a single-feature input and transformed
-    # into an n x 1 matrix.
-    if(is.null(dim(newx)) && !inherits(newx, c("matrix.csr","matrix.csc","matrix.coo","dgCMatrix","dgRMatrix","dgTMatrix"))){
-        newx <- matrix(newx, ncol=1)
-    }
+    pd = .prepareData(newx, "newx")
+    newx = pd$data; n = pd$n; p = pd$p; sparse = pd$sparse; sparse2 = pd$sparse2
+    rm(pd)
 
-    if(sparse <- (inherits(newx, "matrix.csr") | inherits(newx, "matrix.csc") | inherits(newx, "matrix.coo"))){
-        if(requireNamespace("SparseM",quietly=TRUE)){
-            # trying to handle the sparse matrix case with SparseM package
-            if(inherits(newx,"matrix.csc") | inherits(newx,"matrix.coo")){
-                # Transform column-based sparse matrix format and coordinate-based sparse 
-                # matrix format of class matrix.csc or matrix.coo into row-based sparse
-                # matrix format of class matrix.csr.
-                newx<-SparseM::as.matrix.csr(newx)
-            }
-            newx = SparseM::t(SparseM::t(newx)) # make sure column index are sorted
-            n = newx@dimension[1]
-            p = newx@dimension[2]
-        } else {
-            stop("newx inherits from 'matrix.csr', but 'SparseM' package is not available. Cannot proceed further. You could either use non-sparse matrix, install SparseM package or use sparse matrices based on Matrix package, also supported by LiblineaR.")
-        }
-    } else if(sparse2 <- (inherits(newx, "dgCMatrix") | inherits(newx,"dgRMatrix") | inherits(newx,"dgTMatrix"))) {
-        if(requireNamespace("Matrix",quietly=TRUE)){
-            # trying to handle the sparse matrix case with Matrix package
-            if(inherits(newx,"dgCMatrix") | inherits(newx,"dgTMatrix")){
-                # Transform column-based sparse matrix format and triplets-based sparse 
-                # matrix format of class dgCMatrix or dgTMatrix into row-based sparse 
-                # matrix format of class dgRMatrix.
-                newx<-as(as(newx,"matrix"),"dgRMatrix")
-            }
-            newx = Matrix::t(Matrix::t(newx)) # make sure column index are sorted
-            n = dim(newx)[1]
-            p = dim(newx)[2]
-        } else {
-            stop("newx inherits from 'dgCMatrix' or 'dgRMatrix', but 'Matrix' package is not available. Cannot proceed further. You could either use non-sparse matrix, install Matrix package or use sparse matrices based on SparseM package, also supported by LiblineaR.")
-        }
-    } else {
-        # Nb samples
-        n=dim(newx)[1]
-        # Nb features
-        p=dim(newx)[2]
-    }
-    
     # restrict features of newx to those used in model's W
     fNames = colnames(object$W)[colnames(object$W) != "Bias"]
     if(is.null(colnames(newx))) { # also handles SparseM (matrix.csr) case which always returns NULL for colnames, and Matrix (dgCMatrix) case which might sometimes return NULL for colnames.

@@ -17,13 +17,14 @@
 #' \url{https://www.csie.ntu.edu.tw/~cjlin/liblinear/}.
 #' 
 #' @param data 	a nxp data matrix. Each row stands for an example (sample,
-#'   point) and each column stands for a dimension (feature, variable). Sparse
-#'   matrices of class matrix.csr, matrix.csc and matrix.coo from package 
-#'   SparseM are accepted. Sparse matrices of class dgCMatrix, dgRMatrix or 
-#'   dgTMatrix from package Matrix are also accepted. Note that C code at the 
-#'   core of LiblineaR package corresponds to a row-based sparse format. Hence, 
-#'   dgCMatrix, dgTMatrix, matrix.csc and matrix.csr inputs are first 
-#'   transformed into matrix.csr or dgRMatrix formats, which requires small 
+#'   point) and each column stands for a dimension (feature, variable). A
+#'   vector will be transformed to a n x 1 matrix. Sparse
+#'   matrices of class matrix.csr, matrix.csc and matrix.coo from package
+#'   SparseM are accepted. Sparse matrices of class dgCMatrix, dgRMatrix or
+#'   dgTMatrix from package Matrix are also accepted. Note that C code at the
+#'   core of LiblineaR package corresponds to a row-based sparse format. Hence,
+#'   dgCMatrix, dgTMatrix, matrix.csc and matrix.csr inputs are first
+#'   transformed into matrix.csr or dgRMatrix formats, which requires small
 #'   extra computation time.
 #' @param target a response vector for prediction tasks with one value for 
 #'   each of the n rows of \code{data}. For classification, the values 
@@ -285,44 +286,9 @@
 ### Implementation ####
 LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bias=1, wi=NULL, cross=0, verbose=FALSE, findC=FALSE, useInitC=TRUE, ...) {
 	# <Arg preparation>
-  sparse=FALSE
-  sparse2=FALSE
-  if(sparse <- (inherits(data, "matrix.csr") | inherits(data, "matrix.csc") | inherits(data, "matrix.coo")) ){
-    if(requireNamespace("SparseM",quietly=TRUE)){
-  		# trying to handle the sparse matrix case with SparseM package
-      if(inherits(data,"matrix.csc") | inherits(data,"matrix.coo")){
-        # Transform column-based sparse matrix format and coordinate-based sparse 
-        # matrix format of class matrix.csc or matrix.coo into row-based sparse
-        # matrix format of class matrix.csr.
-        data<-SparseM::as.matrix.csr(data)
-      }
-	  	data = SparseM::t(SparseM::t(data)) # make sure column index are sorted
-		  n = data@dimension[1]
-		  p = data@dimension[2]
-    } else {
-      stop("data inherits from 'matrix.csr', but 'SparseM' package is not available. Cannot proceed further. You could either use non-sparse matrix, install SparseM package or use sparse matrices based on Matrix package, also supported by LiblineaR.")
-    }
-  } else if(sparse2 <- (inherits(data, "dgCMatrix") | inherits(data,"dgRMatrix") | inherits(data, "dgTMatrix"))) {
-    if(requireNamespace("Matrix",quietly=TRUE)){
-      # trying to handle the sparse matrix case with Matrix package
-      if(inherits(data,"dgCMatrix") | inherits(data,"dgTMatrix")){
-        # Transform column-based sparse matrix format and triplets-based sparse 
-        # matrix format of class dgCMatrix or dgTMatrix into row-based sparse 
-        # matrix format of class dgRMatrix.
-        data<-as(as(data,"matrix"),"dgRMatrix")
-      }
-      data = Matrix::t(Matrix::t(data)) # make sure column index are sorted
-      n = dim(data)[1]
-      p = dim(data)[2]
-    } else {
-      stop("data inherits from 'dgCMatrix' or 'dgRMatrix', but 'Matrix' package is not available. Cannot proceed further. You could either use non-sparse matrix, install Matrix package or use sparse matrices based on SparseM package, also supported by LiblineaR.")
-    }
-	} else {
-		# Nb samples
-		n=dim(data)[1]
-		# Nb features
-		p=dim(data)[2]
-	}
+  pd = .prepareData(data, "data")
+  data = pd$data; n = pd$n; p = pd$p; sparse = pd$sparse; sparse2 = pd$sparse2
+  rm(pd)
   
 	# Backwards compatibility after renaming 'labels' to 'target'
 	cc = match.call()
@@ -405,11 +371,19 @@ LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bi
 	} else {
 		if(is.character(target))
 			target = factor(target)
-		
+
+		# A numeric target with a fractional part would otherwise be silently
+		# truncated by as.integer() below, collapsing distinct classes together
+		# (e.g. c(1.1, 1.9) both truncate to 1) with no error at all.
+		if(is.numeric(target) && any(target != as.integer(target), na.rm=TRUE))
+			stop("'target' contains non-integer numeric values, which is not valid for a classification 'type'. ",
+					 "Use a factor (or character/integer/logical) if these are meant to be distinct class labels, ",
+					 "or use a regression 'type' (11-13) if these are continuous values to predict.")
+
 		# targetLabels are sorted by first occurrence in target ; if target is a factor, targetLabels too, with the same levels.
 		targetLabels = unique(target)
 		nbClass = length(targetLabels)
-		
+
 		yC = as.integer(target)
 		
 		if (nbClass<2)

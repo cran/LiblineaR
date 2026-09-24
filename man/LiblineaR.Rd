@@ -22,13 +22,14 @@ LiblineaR(
 }
 \arguments{
 \item{data}{a nxp data matrix. Each row stands for an example (sample,
-point) and each column stands for a dimension (feature, variable). Sparse
-matrices of class matrix.csr, matrix.csc and matrix.coo from package 
-SparseM are accepted. Sparse matrices of class dgCMatrix, dgRMatrix or 
-dgTMatrix from package Matrix are also accepted. Note that C code at the 
-core of LiblineaR package corresponds to a row-based sparse format. Hence, 
-dgCMatrix, dgTMatrix, matrix.csc and matrix.csr inputs are first 
-transformed into matrix.csr or dgRMatrix formats, which requires small 
+point) and each column stands for a dimension (feature, variable). A
+vector will be transformed to a n x 1 matrix. Sparse
+matrices of class matrix.csr, matrix.csc and matrix.coo from package
+SparseM are accepted. Sparse matrices of class dgCMatrix, dgRMatrix or
+dgTMatrix from package Matrix are also accepted. Note that C code at the
+core of LiblineaR package corresponds to a row-based sparse format. Hence,
+dgCMatrix, dgTMatrix, matrix.csc and matrix.csr inputs are first
+transformed into matrix.csr or dgRMatrix formats, which requires small
 extra computation time.}
 
 \item{target}{a response vector for prediction tasks with one value for 
