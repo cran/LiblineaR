@@ -17,6 +17,8 @@ LiblineaR(
   verbose = FALSE,
   findC = FALSE,
   useInitC = TRUE,
+  regularizeBias = TRUE,
+  nu = 0.5,
   ...
 )
 }
@@ -62,6 +64,19 @@ details below. Valid options are:
       \item 11 -- L2-regularized L2-loss support vector regression (primal)
       \item 12 -- L2-regularized L2-loss support vector regression (dual)
       \item 13 -- L2-regularized L1-loss support vector regression (dual)
+    }
+  }
+  \item{for outlier/novelty detection}{
+    \itemize{
+      \item 21 -- one-class support vector machine (dual). Unsupervised:
+        \code{target} is still required (its length must match the number
+        of rows of \code{data}) but its values are ignored -- only
+        \code{data} is used. Requires \code{bias <= 0} (no bias term is
+        supported for this solver). See \code{nu} below. \code{predict}
+        returns \code{1} for inliers and \code{-1} for outliers (see
+        \code{\link{predict.LiblineaR}}); \code{decisionValues=TRUE}
+        additionally returns the raw signed distance to the decision
+        boundary.
     }
   }
 }}
@@ -119,19 +134,42 @@ classes are largely unbalanced. Default is 0.}
 \item{verbose}{if \code{TRUE}, information are printed. Default is
 \code{FALSE}.}
 
-\item{findC}{if \code{findC} is \code{TRUE} runs a cross-validation of \code{cross} folds to find the best cost (C) value (works only for type 0 and 2).
-Cross validation is conducted many times under parameters C = start_C, 2*start_C, 4*start_C, 8*start_C, ..., and finds the best one with the highest cross validation accuracy.
+\item{findC}{if \code{findC} is \code{TRUE} runs a cross-validation of \code{cross} folds to find the best cost (C) value (works only for type 0, 2 and 11).
+Cross validation is conducted many times under parameters C = start_C, 2*start_C, 4*start_C, 8*start_C, ..., and finds the best one with the highest cross validation accuracy
+(or, for type 11, the lowest cross-validation mean squared error, additionally searching \code{svr_eps} the same way).
 The procedure stops when the models of all folds become stable or C reaches the maximal value of 1024.}
 
 \item{useInitC}{if \code{useInitC} is \code{TRUE} (default) \code{cost} is used as the smallest start_C value of the search range (\code{findC} has to be \code{TRUE}).
-If \code{useInitC} is \code{FALSE}, then the procedure calculates a small enough start_C.}
+If \code{useInitC} is \code{FALSE}, then the procedure calculates a small enough start_C itself.
+For \code{type}=11, \code{useInitC} additionally governs the \code{svr_eps} search: when \code{TRUE}, \code{svr_eps} sets an upper
+anchor point for where the (always-descending, always ending at 0) \code{svr_eps} sweep begins -- LIBLINEAR's own
+\code{find_parameters()} always tests every value from that anchor down to 0 and keeps whichever minimizes cross-validation error,
+so a small \code{svr_eps} relative to the scale of \code{target} can collapse the sweep to testing only \code{svr_eps=0}.
+When \code{FALSE}, the full default 20-step sweep (anchored at the largest \code{abs(target)} value) is used instead.}
+
+\item{regularizeBias}{if \code{FALSE}, the bias term is excluded from the
+L1/L2 regularization penalty (upstream LIBLINEAR's \code{-R} flag).
+Default is \code{TRUE} (the bias term is regularized like every other
+coefficient, matching this package's behavior prior to this argument's
+introduction). Only valid combined with \code{bias == 1} exactly, and
+only for \code{type} 0, 2, 5, 6 or 11; using \code{FALSE} elsewhere, or
+with a different \code{bias}, raises an error. Upstream LIBLINEAR's own
+documentation advises against using this unless you specifically know
+why you need it.}
+
+\item{nu}{the \code{nu} parameter of one-class SVM (\code{type} 21 only,
+ignored otherwise): an upper bound on the fraction of training examples
+that may be treated as outliers, and a lower bound on the fraction of
+examples that end up as support vectors. Must be in (0, 1). Default is
+0.5, matching upstream LIBLINEAR's own default.}
 
 \item{...}{for backwards compatibility, parameter \code{labels} may be
 provided instead of \code{target}. A warning will then be issued, or an
 error if both are present. Other extra parameters are ignored.}
 }
 \value{
-If \code{cross}>0, the average accuracy (classification) or mean square error (regression) computed over \code{cross} runs of cross-validation is returned.\cr\cr
+If \code{cross}>0 (and \code{findC} is \code{FALSE}), the average accuracy (classification) or mean square error (regression) computed over \code{cross} runs of cross-validation is returned.\cr\cr
+ If \code{findC} is \code{TRUE}, the best \code{cost} value found is returned; for \code{type}=11, a named list \code{list(C=..., svr_eps=...)} with both best values is returned instead of a plain number.\cr\cr
 Otherwise, an object of class \code{"LiblineaR"} containing the fitted model is returned, including:
 \item{TypeDetail}{A string describing the type of model fitted, as determined by \code{type}.}
 \item{Type}{An integer corresponding to \code{type}.}
@@ -306,8 +344,8 @@ Journal of Machine Learning Research 9(2008), 1871-1874.\cr
 \code{\link{predict.LiblineaR}}, \code{\link{heuristicC}}
 }
 \author{
-Thibault Helleputte \email{thibault.helleputte@dnalytics.com} and\cr
-  Jerome Paul \email{jerome.paul@dnalytics.com} and Pierre Gramme.\cr
+Thibault Helleputte \email{thibault.helleputte@dnalytics.com}.\cr
+  Co-authored through version 2.10-26 by Jerome Paul and Pierre Gramme.\cr
   Based on C/C++-code by Chih-Chung Chang and Chih-Jen Lin
 }
 \keyword{classes}

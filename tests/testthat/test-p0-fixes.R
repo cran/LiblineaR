@@ -109,6 +109,9 @@ test_that("trainLinear() frees its buffers when check_parameter() rejects, even 
        as.integer(0),
        as.integer(0),
        as.integer(1),
+       as.integer(1),   # regularizeBias = TRUE (default), Phase B
+       as.double(-1),   # bestP_ret placeholder, Phase B (unused here)
+       as.double(0.5),  # nu (default), Phase B (unused here)
        PACKAGE = "LiblineaR")
   }
   expect_error(invisible(capture.output(for (i in 1:20) run_invalid())), NA)
@@ -182,6 +185,9 @@ test_that("a would-overflow dense allocation size errors cleanly instead of corr
        as.integer(0),
        as.integer(0),
        as.integer(1),
+       as.integer(1),   # regularizeBias = TRUE (default), Phase B
+       as.double(-1),   # bestP_ret placeholder, Phase B (unused here)
+       as.double(0.5),  # nu (default), Phase B (unused here)
        PACKAGE = "LiblineaR"),
     regexp = "too large|exceeds"
   )

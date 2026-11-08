@@ -3,7 +3,7 @@ version 2 (see the COPYING file) -- Copyright (C) Thibault Helleputte,
 Jerome Paul and Pierre Gramme.
 
 It bundles the LIBLINEAR C/C++ library (src/linear.cpp, src/linear.h,
-src/tron.cpp, src/tron.h), vendored with a small number of R-integration
+src/newton.cpp, src/newton.h), vendored with a small number of R-integration
 changes documented in NEWS. That code is separately copyrighted by the
 LIBLINEAR Project and distributed under the 3-clause BSD license reproduced
 below, which is permissive and GPL-2 compatible (BSD-licensed code may be

@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Thibault Helleputte" />
+
+<meta name="date" content="2026-11-03" />
+
+<title>LiblineaR 2.50-1: New Features, Correctness, and Performance</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">LiblineaR 2.50-1: New Features,
+Correctness, and Performance</h1>
+<h4 class="author">Thibault Helleputte</h4>
+<h4 class="date">2026-11-03</h4>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(LiblineaR)</span></code></pre></div>
+<p>This version of <code>LiblineaR</code> updates its bundled copy of
+the LIBLINEAR C/C++ library from v2.1 (2015) to v2.50 (2024) – the first
+upgrade of the bundled library in a decade, since <code>LiblineaR</code>
+2.10-0 in July 2016. This vignette covers two things: the new
+capabilities this brings at the R level, and evidence that the upgrade
+is safe to rely on, along with what it changes in practice.</p>
+<div id="new-in-this-release" class="section level2">
+<h2>New in this release</h2>
+<p>Three new capabilities are available, on top of everything
+<code>LiblineaR</code> already supported.</p>
+<div id="one-class-svm-outlier-and-novelty-detection" class="section level3">
+<h3>One-class SVM: outlier and novelty detection</h3>
+<p><code>type=21</code> fits a one-class SVM. Unlike every other
+<code>type</code>, it is <strong>unsupervised</strong> – it learns what
+“normal” data looks like from <code>data</code> alone.
+<code>target</code> is still required as an argument (its length must
+match the number of rows of <code>data</code>) but its <em>values</em>
+are ignored. <code>bias</code> must be <code>&lt;= 0</code> (this solver
+has no bias-term concept), and <code>nu</code> (a number in (0, 1),
+default 0.5) is an upper bound on the fraction of training points that
+may be treated as outliers.</p>
+<p><code>predict()</code> returns <code>1</code> for inliers and
+<code>-1</code> for outliers; <code>decisionValues=TRUE</code>
+additionally returns the raw signed distance to the decision boundary
+(positive means inlier – useful if you want to rank points by how
+anomalous they are, rather than just a yes/no call).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>x <span class="ot">&lt;-</span> iris[, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>y <span class="ot">&lt;-</span> iris[, <span class="dv">5</span>]</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>m_oc <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">21</span>, <span class="at">bias =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">nu =</span> <span class="fl">0.1</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>p_oc <span class="ot">&lt;-</span> <span class="fu">predict</span>(m_oc, <span class="at">newx =</span> x, <span class="at">decisionValues =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="fu">table</span>(p_oc<span class="sc">$</span>predictions)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;   1 </span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; 150</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">head</span>(p_oc<span class="sc">$</span>decisionValues)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt;        [,1]</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; [1,] 543.29</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; [2,] 506.37</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; [3,] 499.75</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; [4,] 492.30</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; [5,] 541.00</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; [6,] 589.24</span></span></code></pre></div>
+</div>
+<div id="regularizebias-excluding-the-intercept-from-regularization" class="section level3">
+<h3><code>regularizeBias</code>: excluding the intercept from
+regularization</h3>
+<p>By default, <code>LiblineaR</code>’s bias term (the intercept) is
+penalized by the L1/L2 regularization exactly like every other
+coefficient. Setting <code>regularizeBias=FALSE</code> excludes it, so
+it is fit freely. This is only valid combined with <code>bias=1</code>
+exactly, and only for <code>type</code> 0, 2, 5, 6 or 11; other
+combinations raise a clear error. Most users should leave this at its
+default (<code>TRUE</code>) – an unregularized intercept is a
+specialized choice, useful mainly when you have strong reasons to
+believe the regularization penalty should apply only to the feature
+weights, not to the overall offset.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>m_default <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">bias =</span> <span class="dv">1</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>m_unreg   <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">bias =</span> <span class="dv">1</span>, <span class="at">regularizeBias =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+</div>
+<div id="findc-now-supports-svr-type11" class="section level3">
+<h3><code>findC</code> now supports SVR (<code>type=11</code>)</h3>
+<p>For perspective: <code>heuristicC(data)</code> and
+<code>findC=TRUE</code> both help pick a good <code>cost</code>, but
+they work very differently. <code>heuristicC()</code> is a fast,
+closed-form formula – it inspects <code>data</code> once and returns a
+single suggested <code>cost</code>, with no training involved at all.
+<code>findC=TRUE</code> is an actual empirical search – it repeatedly
+trains and cross-validates across a doubling sequence of
+<code>cost</code> values and returns whichever one empirically scored
+best. <code>heuristicC()</code> is a cheap starting guess;
+<code>findC</code> is expensive but data-driven tuning, and the two
+compose naturally: <code>useInitC=TRUE</code> (the default) uses the
+<code>cost</code> you pass in – often <code>heuristicC()</code>’s own
+suggestion – as <code>findC</code>’s starting point for the search.</p>
+<p><code>findC=TRUE</code> previously only searched for a good
+<code>cost</code> with <code>type=0</code> and <code>type=2</code>. It
+now also supports <code>type=11</code> (L2-regularized L2-loss SVR),
+additionally searching <code>svr_eps</code> at the same time. For this
+<code>type</code> only, <code>findC</code> returns a named list
+<code>list(C=..., svr_eps=...)</code> instead of a plain number, since
+there are now two values to report; <code>type</code> 0 and 2 are
+unaffected and still return a plain number.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>xr <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(iris[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>])</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>yr <span class="ot">&lt;-</span> iris[, <span class="dv">4</span>]</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>best <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(xr, yr, <span class="at">type =</span> <span class="dv">11</span>, <span class="at">findC =</span> <span class="cn">TRUE</span>, <span class="at">cross =</span> <span class="dv">5</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; Warning in LiblineaR(xr, yr, type = 11, findC = TRUE, cross = 5): No value</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; provided for svr_eps. Using default of 0.1</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>best</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; $C</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; $svr_eps</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>m_svr <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(xr, yr, <span class="at">type =</span> <span class="dv">11</span>, <span class="at">cost =</span> best<span class="sc">$</span>C, <span class="at">svr_eps =</span> best<span class="sc">$</span>svr_eps)</span></code></pre></div>
+</div>
+</div>
+<div id="is-the-upgrade-safe-to-rely-on" class="section level2">
+<h2>Is the upgrade safe to rely on?</h2>
+<p>Beyond <code>LiblineaR</code>’s own regression test suite, this
+section reports an independent check: models were trained with the
+<strong>pristine, unmodified LIBLINEAR command-line tools</strong>
+(<code>train</code>/<code>predict</code>, compiled directly from
+upstream source, no R or <code>LiblineaR</code> code involved at all)
+and compared against <code>LiblineaR</code>’s own output, at both the
+old (v2.10) and new (v2.50) LIBLINEAR version.</p>
+<div id="method" class="section level3">
+<h3>Method</h3>
+<p>Four engines were compared: the LIBLINEAR command-line tools at v2.10
+and v2.50, and the <code>LiblineaR</code> R package before and after
+this upgrade. All four were trained on <strong>byte-identical
+data</strong> (the same train/test split of the same matrix) with
+matching hyperparameters (<code>cost</code>, <code>bias</code>,
+<code>epsilon</code>, <code>svr_eps</code>). Four datasets were used:
+two synthetic classification problems (2-class and 3-class, 600 rows
+each), one regression problem (600 rows), and one larger problem (8000
+rows, 300 columns) reserved for timing.</p>
+<p><strong>A methodological caveat, confirmed empirically before
+trusting any of the numbers below:</strong> LIBLINEAR’s dual
+coordinate-descent solvers (and the L1-regularized solvers) shuffle
+their working set using a random number generator.
+<code>LiblineaR</code> routes this through R’s own RNG
+(<code>set.seed()</code>-controlled), while the plain command-line tools
+use C’s own unseeded <code>rand()</code>. <strong>For these solver
+types, coefficients are not expected to match between
+<code>LiblineaR</code> and the command-line tools, even at the identical
+LIBLINEAR version</strong> – they are two different, independent,
+equally valid solutions to the same problem. What <em>is</em> expected,
+and checked below, is that predictions agree almost exactly. Primal,
+non-randomized solvers (logistic regression and L2-loss SVM/SVR,
+<code>type</code> 0, 2, 11) use no randomness at all, so their
+coefficients are expected to match the command-line tools almost to
+floating-point precision – and are the real fidelity check.</p>
+</div>
+<div id="result-1-does-liblinear-still-correctly-wrap-liblinear" class="section level3">
+<h3>Result 1: does <code>LiblineaR</code> still correctly wrap
+LIBLINEAR?</h3>
+<p>Maximum absolute coefficient difference between
+<code>LiblineaR</code> and the pristine command-line tools, same
+LIBLINEAR version, across the 3 correctness datasets (28 train/predict
+comparisons per version):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>fidelity <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">type =</span> <span class="fu">c</span>(<span class="dv">0</span><span class="dt">L</span>, <span class="dv">1</span><span class="dt">L</span>, <span class="dv">2</span><span class="dt">L</span>, <span class="dv">3</span><span class="dt">L</span>, <span class="dv">4</span><span class="dt">L</span>, <span class="dv">5</span><span class="dt">L</span>, <span class="dv">6</span><span class="dt">L</span>, <span class="dv">7</span><span class="dt">L</span>, <span class="dv">11</span><span class="dt">L</span>, <span class="dv">12</span><span class="dt">L</span>, <span class="dv">13</span><span class="dt">L</span>),</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">solver =</span> <span class="fu">c</span>(<span class="st">&quot;L2R_LR (primal)&quot;</span>, <span class="st">&quot;L2R_L2LOSS_SVC_DUAL&quot;</span>, <span class="st">&quot;L2R_L2LOSS_SVC (primal)&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>             <span class="st">&quot;L2R_L1LOSS_SVC_DUAL&quot;</span>, <span class="st">&quot;MCSVM_CS&quot;</span>, <span class="st">&quot;L1R_L2LOSS_SVC&quot;</span>, <span class="st">&quot;L1R_LR&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>             <span class="st">&quot;L2R_LR_DUAL&quot;</span>, <span class="st">&quot;L2R_L2LOSS_SVR (primal)&quot;</span>, <span class="st">&quot;L2R_L2LOSS_SVR_DUAL&quot;</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>             <span class="st">&quot;L2R_L1LOSS_SVR_DUAL&quot;</span>),</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">max_abs_diff_v210 =</span> <span class="fu">c</span>(<span class="fl">1.72e-10</span>, <span class="fl">9.65e-03</span>, <span class="fl">1.98e-10</span>, <span class="fl">3.60e-02</span>, <span class="fl">1.38e-02</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>                         <span class="fl">3.93e-01</span>, <span class="fl">6.82e-01</span>, <span class="fl">7.32e-03</span>, <span class="fl">1.84e-10</span>, <span class="fl">7.93e-02</span>, <span class="fl">1.71e-01</span>),</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="at">max_abs_diff_v250 =</span> <span class="fu">c</span>(<span class="fl">1.75e-10</span>, <span class="fl">9.65e-03</span>, <span class="fl">1.93e-10</span>, <span class="fl">3.60e-02</span>, <span class="fl">1.38e-02</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>                         <span class="fl">3.93e-01</span>, <span class="fl">6.82e-01</span>, <span class="fl">7.32e-03</span>, <span class="fl">1.59e-10</span>, <span class="fl">7.93e-02</span>, <span class="fl">1.71e-01</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>)</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(fidelity, <span class="at">digits =</span> <span class="dv">4</span>,</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;type&quot;</span>, <span class="st">&quot;solver&quot;</span>, <span class="st">&quot;max|diff| vs CLI (2.10)&quot;</span>, <span class="st">&quot;max|diff| vs CLI (2.50)&quot;</span>))</span></code></pre></div>
+<table style="width:100%;">
+<colgroup>
+<col width="5%" />
+<col width="24%" />
+<col width="35%" />
+<col width="35%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">type</th>
+<th align="left">solver</th>
+<th align="right">max|diff| vs CLI (2.10)</th>
+<th align="right">max|diff| vs CLI (2.50)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="left">L2R_LR (primal)</td>
+<td align="right">0.0000</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">L2R_L2LOSS_SVC_DUAL</td>
+<td align="right">0.0097</td>
+<td align="right">0.0097</td>
+</tr>
+<tr class="odd">
+<td align="right">2</td>
+<td align="left">L2R_L2LOSS_SVC (primal)</td>
+<td align="right">0.0000</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="right">3</td>
+<td align="left">L2R_L1LOSS_SVC_DUAL</td>
+<td align="right">0.0360</td>
+<td align="right">0.0360</td>
+</tr>
+<tr class="odd">
+<td align="right">4</td>
+<td align="left">MCSVM_CS</td>
+<td align="right">0.0138</td>
+<td align="right">0.0138</td>
+</tr>
+<tr class="even">
+<td align="right">5</td>
+<td align="left">L1R_L2LOSS_SVC</td>
+<td align="right">0.3930</td>
+<td align="right">0.3930</td>
+</tr>
+<tr class="odd">
+<td align="right">6</td>
+<td align="left">L1R_LR</td>
+<td align="right">0.6820</td>
+<td align="right">0.6820</td>
+</tr>
+<tr class="even">
+<td align="right">7</td>
+<td align="left">L2R_LR_DUAL</td>
+<td align="right">0.0073</td>
+<td align="right">0.0073</td>
+</tr>
+<tr class="odd">
+<td align="right">11</td>
+<td align="left">L2R_L2LOSS_SVR (primal)</td>
+<td align="right">0.0000</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="right">12</td>
+<td align="left">L2R_L2LOSS_SVR_DUAL</td>
+<td align="right">0.0793</td>
+<td align="right">0.0793</td>
+</tr>
+<tr class="odd">
+<td align="right">13</td>
+<td align="left">L2R_L1LOSS_SVR_DUAL</td>
+<td align="right">0.1710</td>
+<td align="right">0.1710</td>
+</tr>
+</tbody>
+</table>
+<p>Primal types (0, 2, 11) match the pristine command-line tools to
+<strong>1e-10</strong>, at both versions – direct evidence that
+<code>LiblineaR</code> correctly passes data through to the same
+underlying solver, unaffected by the upgrade. Every dual/L1 type shows a
+larger difference, exactly as the caveat above predicts – and across all
+54 such comparisons (both versions, all 3 datasets), <strong>minimum
+prediction agreement was 98.75%, with most exactly 100%</strong>,
+confirming these are two valid solutions to the same problem, not a
+correctness gap.</p>
+</div>
+<div id="result-2-what-changed-for-an-ordinary-user" class="section level3">
+<h3>Result 2: what changed for an ordinary user</h3>
+<p>Maximum absolute coefficient difference between
+<code>LiblineaR</code> before and after the upgrade, same 3
+datasets:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>upgrade <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">type =</span> <span class="fu">c</span>(<span class="dv">0</span><span class="dt">L</span>, <span class="dv">1</span><span class="dt">L</span>, <span class="dv">2</span><span class="dt">L</span>, <span class="dv">3</span><span class="dt">L</span>, <span class="dv">4</span><span class="dt">L</span>, <span class="dv">5</span><span class="dt">L</span>, <span class="dv">6</span><span class="dt">L</span>, <span class="dv">7</span><span class="dt">L</span>, <span class="dv">11</span><span class="dt">L</span>, <span class="dv">12</span><span class="dt">L</span>, <span class="dv">13</span><span class="dt">L</span>),</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">solver =</span> fidelity<span class="sc">$</span>solver,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">max_abs_diff =</span> <span class="fu">c</span>(<span class="fl">0.0789</span>, <span class="dv">0</span>, <span class="fl">0.2281</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.0021</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(upgrade, <span class="at">digits =</span> <span class="dv">4</span>, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;type&quot;</span>, <span class="st">&quot;solver&quot;</span>, <span class="st">&quot;max|diff| (2.10-26 vs. 2.50-1)&quot;</span>))</span></code></pre></div>
+<table>
+<colgroup>
+<col width="7%" />
+<col width="34%" />
+<col width="58%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">type</th>
+<th align="left">solver</th>
+<th align="right">max|diff| (2.10-26 vs. 2.50-1)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="left">L2R_LR (primal)</td>
+<td align="right">0.0789</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">L2R_L2LOSS_SVC_DUAL</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="odd">
+<td align="right">2</td>
+<td align="left">L2R_L2LOSS_SVC (primal)</td>
+<td align="right">0.2281</td>
+</tr>
+<tr class="even">
+<td align="right">3</td>
+<td align="left">L2R_L1LOSS_SVC_DUAL</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="odd">
+<td align="right">4</td>
+<td align="left">MCSVM_CS</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="right">5</td>
+<td align="left">L1R_L2LOSS_SVC</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="odd">
+<td align="right">6</td>
+<td align="left">L1R_LR</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td align="right">7</td>
+<td align="left">L2R_LR_DUAL</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="odd">
+<td align="right">11</td>
+<td align="left">L2R_L2LOSS_SVR (primal)</td>
+<td align="right">0.0021</td>
+</tr>
+<tr class="even">
+<td align="right">12</td>
+<td align="left">L2R_L2LOSS_SVR_DUAL</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="odd">
+<td align="right">13</td>
+<td align="left">L2R_L1LOSS_SVR_DUAL</td>
+<td align="right">0.0000</td>
+</tr>
+</tbody>
+</table>
+<p>Only the 3 primal Newton-solved types (0, 2, 11) show any drift at
+all: LIBLINEAR replaced its trust-region Newton solver with a
+faster-converging line-search variant partway through this version
+range, refined further by later releases. Every dual/L1 type was
+<strong>bit-for-bit identical</strong> on these ordinary,
+well-conditioned datasets – LIBLINEAR 2.50’s lower iteration cap on dual
+coordinate descent (see Result 3) was never actually reached on data
+this well-behaved. Predictive performance (accuracy for classification,
+mean squared error for regression) matched to 4 decimal places for every
+type on every dataset.</p>
+</div>
+<div id="result-3-what-actually-changed-under-harder-conditions" class="section level3">
+<h3>Result 3: what actually changed under harder conditions</h3>
+<p>LIBLINEAR 2.50 caps its dual coordinate-descent solvers at 300
+iterations (down from 1000 in earlier versions) and, for three solver
+types, automatically switches to the primal solver instead of running
+out the clock if that cap is reached. Result 2 shows this is invisible
+on easy-to-fit data. It stops being invisible on a harder problem. On a
+larger, more weakly-separated dataset (8000 rows, 300 columns):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>large <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">type =</span> <span class="fu">c</span>(<span class="dv">0</span><span class="dt">L</span>, <span class="dv">1</span><span class="dt">L</span>, <span class="dv">7</span><span class="dt">L</span>, <span class="dv">11</span><span class="dt">L</span>, <span class="dv">12</span><span class="dt">L</span>),</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">solver =</span> <span class="fu">c</span>(<span class="st">&quot;L2R_LR (primal)&quot;</span>, <span class="st">&quot;L2R_L2LOSS_SVC_DUAL&quot;</span>, <span class="st">&quot;L2R_LR_DUAL&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>             <span class="st">&quot;L2R_L2LOSS_SVR (primal)&quot;</span>, <span class="st">&quot;L2R_L2LOSS_SVR_DUAL&quot;</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">metric_old =</span> <span class="fu">c</span>(<span class="fl">0.9188</span>, <span class="fl">0.9219</span>, <span class="fl">0.9200</span>, <span class="fl">1.0234</span>, <span class="fl">1.0502</span>),</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">metric_new =</span> <span class="fu">c</span>(<span class="fl">0.9181</span>, <span class="fl">0.9188</span>, <span class="fl">0.9200</span>, <span class="fl">1.0235</span>, <span class="fl">1.0234</span>),</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">time_old_s =</span> <span class="fu">c</span>(<span class="fl">0.133</span>, <span class="fl">0.632</span>, <span class="fl">1.035</span>, <span class="fl">0.075</span>, <span class="fl">3.400</span>),</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">time_new_s =</span> <span class="fu">c</span>(<span class="fl">0.147</span>, <span class="fl">0.288</span>, <span class="fl">0.998</span>, <span class="fl">0.086</span>, <span class="fl">1.201</span>),</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="at">speedup =</span> <span class="fu">c</span>(<span class="fl">0.90</span>, <span class="fl">2.19</span>, <span class="fl">1.04</span>, <span class="fl">0.87</span>, <span class="fl">2.83</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(large, <span class="at">digits =</span> <span class="dv">4</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;type&quot;</span>, <span class="st">&quot;solver&quot;</span>, <span class="st">&quot;accuracy/MSE (2.10-26)&quot;</span>, <span class="st">&quot;accuracy/MSE (2.50-1)&quot;</span>,</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>                <span class="st">&quot;time 2.10-26 (s)&quot;</span>, <span class="st">&quot;time 2.50-1 (s)&quot;</span>, <span class="st">&quot;speedup&quot;</span>))</span></code></pre></div>
+<table>
+<colgroup>
+<col width="4%" />
+<col width="20%" />
+<col width="20%" />
+<col width="19%" />
+<col width="14%" />
+<col width="13%" />
+<col width="6%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">type</th>
+<th align="left">solver</th>
+<th align="right">accuracy/MSE (2.10-26)</th>
+<th align="right">accuracy/MSE (2.50-1)</th>
+<th align="right">time 2.10-26 (s)</th>
+<th align="right">time 2.50-1 (s)</th>
+<th align="right">speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="left">L2R_LR (primal)</td>
+<td align="right">0.9188</td>
+<td align="right">0.9181</td>
+<td align="right">0.133</td>
+<td align="right">0.147</td>
+<td align="right">0.90</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="left">L2R_L2LOSS_SVC_DUAL</td>
+<td align="right">0.9219</td>
+<td align="right">0.9188</td>
+<td align="right">0.632</td>
+<td align="right">0.288</td>
+<td align="right">2.19</td>
+</tr>
+<tr class="odd">
+<td align="right">7</td>
+<td align="left">L2R_LR_DUAL</td>
+<td align="right">0.9200</td>
+<td align="right">0.9200</td>
+<td align="right">1.035</td>
+<td align="right">0.998</td>
+<td align="right">1.04</td>
+</tr>
+<tr class="even">
+<td align="right">11</td>
+<td align="left">L2R_L2LOSS_SVR (primal)</td>
+<td align="right">1.0234</td>
+<td align="right">1.0235</td>
+<td align="right">0.075</td>
+<td align="right">0.086</td>
+<td align="right">0.87</td>
+</tr>
+<tr class="odd">
+<td align="right">12</td>
+<td align="left">L2R_L2LOSS_SVR_DUAL</td>
+<td align="right">1.0502</td>
+<td align="right">1.0234</td>
+<td align="right">3.400</td>
+<td align="right">1.201</td>
+<td align="right">2.83</td>
+</tr>
+</tbody>
+</table>
+<p>Two solver types where the iteration cap is actually reached on this
+dataset (<code>type</code> 1 and <code>type</code> 12, both dual) show a
+<strong>2.2x and 2.8x speedup</strong> respectively – and
+<code>type</code> 12’s test-set mean squared error also
+<em>improved</em> (1.050 → 1.023), because the previous solver spent its
+full 1000-iteration budget grinding toward a barely-better optimum on a
+genuinely slow-converging problem, while the current one recognizes the
+cap, switches solver, and reaches a comparably good (here, slightly
+better) answer in a fraction of the time. The primal Newton types (0,
+11) are essentially a wash in either direction (0.87-0.90x) – expected,
+since that solver’s algorithm changed but not its overall cost.</p>
+</div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<ul>
+<li><strong>New capabilities</strong>: one-class SVM for outlier/novelty
+detection, optional unregularized intercept, and <code>findC</code>
+support for SVR.</li>
+<li><strong>Correctness</strong>: <code>LiblineaR</code> continues to
+faithfully wrap LIBLINEAR, confirmed against the pristine command-line
+tools directly, not just against its own prior output. Coefficient-level
+agreement for every non-randomized solver is at floating-point
+precision.</li>
+<li><strong>Impact on existing code</strong>: minimal. Only 3 of the 11
+previously available solver types show any coefficient drift at all, and
+it does not measurably affect predictive performance in this study.</li>
+<li><strong>Performance</strong>: dual coordinate-descent solvers on
+harder-to-converge problems can now be more than twice as fast,
+sometimes with <em>better</em> held-out performance, because LIBLINEAR
+2.50 recognizes slow convergence and switches strategy instead of
+running a fixed iteration budget to completion.</li>
+</ul>
+<p><strong>Reproducibility note.</strong> These figures were measured on
+R version 4.6.1 (2026-06-24), Linux, using LIBLINEAR upstream source at
+tags <code>v210</code> and <code>v250</code>
+(github.com/cjlin1/liblinear), compiled standalone with no changes.
+<code>set.seed()</code> was fixed identically across
+<code>LiblineaR</code> calls for a given comparison; the command-line
+tools have no equivalent seed control (see the caveat above). Datasets
+are synthetic and fixed by seed; absolute numbers will differ on other
+data, but the qualitative pattern (primal solvers: no timing benefit,
+but a different algorithm; dual solvers: identical on easy data, faster
+and possibly more accurate on hard data) is expected to hold generally,
+since it follows directly from the documented behavior of the underlying
+LIBLINEAR change, not from anything data-specific.</p>
+<p><strong>Authorship note.</strong> The scope and content of this
+report – what to test, which comparisons matter, and how to interpret
+the results – were designed and directed by the package maintainer.
+Drafting of this vignette and the accompanying comparison scripts was
+AI-assisted (Claude, Anthropic). Every figure was produced by actually
+running the real LIBLINEAR and LiblineaR software, not generated by the
+AI; all code, results, and conclusions were reviewed and validated by
+the maintainer before publication.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

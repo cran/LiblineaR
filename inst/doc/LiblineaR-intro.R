@@ -14,6 +14,11 @@ m_svm <- LiblineaR(x, y, type = 2)   # L2-loss SVM
 
 dim(m_lr$W)   # one row per class (3 classes, multi-class problem)
 
+## ----oneclass-----------------------------------------------------------------
+m_oc <- LiblineaR(x, y, type = 21, bias = -1, nu = 0.1)
+p_oc <- predict(m_oc, newx = x, decisionValues = TRUE)
+table(p_oc$predictions)
+
 ## ----svr_eps------------------------------------------------------------------
 xr <- as.matrix(iris[, 1:3])
 yr <- iris[, 4]

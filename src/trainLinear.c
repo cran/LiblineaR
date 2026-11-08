@@ -15,7 +15,7 @@
 
 void print_null(const char *s) {}
 
-void setup_params(int *type, double *cost, double *epsilon, double* svr_eps, int *nrWi, double *Wi, int *WiLabels, int *cross, int *verbose, int *findC, int *useInitC);
+void setup_params(int *type, double *cost, double *epsilon, double* svr_eps, int *nrWi, double *Wi, int *WiLabels, int *cross, int *verbose, int *findC, int *useInitC, int *regularizeBias, double *nu);
 void setup_problem(double *X, double *Y, int *nbSamples, int *nbDim, int *sparse, int *rowindex, int *colindex, double *bi, int *verbose);
 double do_cross_validation(void);
 double do_find_parameter_C(void);
@@ -29,6 +29,13 @@ int nr_fold;
 int flag_find_C;
 int flag_C_specified;
 int flag_verbose;
+// Phase B: set by do_find_parameter_C() when it searches svr_eps too
+// (L2R_L2LOSS_SVR / type 11 only); read back by trainLinear() into its
+// own dedicated, safely-sized output parameter (bestP_ret) rather than
+// into W_ret, whose buffer can be as small as a single element (e.g.
+// bias<=0 and a single feature) and so cannot safely carry a second
+// value.
+double last_best_p;
 
 /**
  * Function: trainLinear
@@ -36,17 +43,17 @@ int flag_verbose;
  * Author: Thibault Helleputte
  *
  */
-void trainLinear(double *W_ret, int* labels_ret, double *X, double *Y, int *nbSamples, int *nbDim, int *sparse, int *rowindex, int *colindex, 
-                 double *bi, int *type, double *cost, double *epsilon, double* svr_eps, int *nrWi, double *Wi, int *WiLabels, int *cross, int *verbose, int *findC, int *useInitC)
+void trainLinear(double *W_ret, int* labels_ret, double *X, double *Y, int *nbSamples, int *nbDim, int *sparse, int *rowindex, int *colindex,
+                 double *bi, int *type, double *cost, double *epsilon, double* svr_eps, int *nrWi, double *Wi, int *WiLabels, int *cross, int *verbose, int *findC, int *useInitC, int *regularizeBias, double *bestP_ret, double *nu)
 {
 	if(*verbose)
 	    flag_verbose = 1;
 	else
 	    flag_verbose = 0;
-	
+
 	const char *error_msg;
-	
-	setup_params(type, cost, epsilon, svr_eps, nrWi, Wi, WiLabels, cross, verbose, findC, useInitC);
+
+	setup_params(type, cost, epsilon, svr_eps, nrWi, Wi, WiLabels, cross, verbose, findC, useInitC, regularizeBias, nu);
 	setup_problem(X, Y, nbSamples, nbDim, sparse, rowindex, colindex, bi, verbose);
 
 	if(*verbose)
@@ -68,8 +75,10 @@ void trainLinear(double *W_ret, int* labels_ret, double *X, double *Y, int *nbSa
 	{
 		if(*verbose)
 			Rprintf("FIND C\n");
-		
+
+		last_best_p = NA_REAL;
 		W_ret[0] = do_find_parameter_C();
+		*bestP_ret = last_best_p;
 	}
 	else if(flag_cross_validation)
 	{
@@ -105,25 +114,49 @@ void trainLinear(double *W_ret, int* labels_ret, double *X, double *Y, int *nbSa
 
 double do_find_parameter_C(void)
 {
-	double start_C, best_C, best_rate;
-	double max_C = 1024;
+	// find_parameter_C() (single-purpose: C-only search) was renamed and
+	// restructured upstream (LIBLINEAR v2.30) into find_parameters(),
+	// which also supports a joint C/svr_eps search for L2R_L2LOSS_SVR.
+	// Phase B exposes that: findC is now also validated above to reach
+	// here for L2R_L2LOSS_SVR (type 11), in addition to the original
+	// L2R_LR/L2R_L2LOSS_SVC (types 0/2). For type 11, start_p reuses the
+	// same 'useInitC' flag/semantics as start_C already does for C --
+	// "use my given value (svr_eps, in param.p) as the search anchor" --
+	// rather than introducing a second, near-duplicate R-level argument
+	// just for p. For types 0/2, find_parameters()'s own internal
+	// dispatch never touches its p-search branch at all regardless of
+	// start_p, and always sets best_p to the sentinel -1. best_rate was
+	// renamed best_score, same meaning (fraction correct for
+	// classification, negative MSE for regression -- see below) for
+	// these solver types; max_C is no longer a caller-supplied argument
+	// -- find_parameters() now applies the same 1024 default internally.
+	double start_C, start_p, best_C, best_p, best_score;
 	if (flag_C_specified)
 		start_C = param.C;
 	else
 		start_C = -1.0;
-	
+
+	if (param.solver_type == L2R_L2LOSS_SVR && flag_C_specified)
+		start_p = param.p;
+	else
+		start_p = -1.0;
+
 	if(flag_verbose)
 		Rprintf("Doing parameter search with %d-fold cross validation.\n", nr_fold);
-	
-	find_parameter_C(&prob, &param, nr_fold, start_C, max_C, &best_C, &best_rate);
-	
+
+	find_parameters(&prob, &param, nr_fold, start_C, start_p, &best_C, &best_p, &best_score);
+
 	if(flag_verbose)
-		Rprintf("Best C = %g  CV accuracy = %g%%\n", best_C, 100.0*best_rate);
-	
-	if(best_rate == 0){
+		Rprintf("Best C = %g  Best p = %g  CV score = %g\n", best_C, best_p, best_score);
+
+	if(best_score == 0){
+		last_best_p = NA_REAL;
 		return NA_REAL;
 	}
-	
+
+	if(param.solver_type == L2R_L2LOSS_SVR)
+		last_best_p = best_p;
+
 	return best_C;
 }
 
@@ -181,7 +214,7 @@ double do_cross_validation(void)
  * Author: Pierre Gramme, Jerome Paul
  *
  */
-void setup_params(int *type, double *cost, double *epsilon, double* svr_eps, int *nrWi, double *Wi, int *WiLabels, int *cross, int *verbose, int *findC, int *useInitC)
+void setup_params(int *type, double *cost, double *epsilon, double* svr_eps, int *nrWi, double *Wi, int *WiLabels, int *cross, int *verbose, int *findC, int *useInitC, int *regularizeBias, double *nu)
 {
 	if(*verbose){
 		Rprintf("ARGUMENTS SETUP\n");
@@ -199,7 +232,21 @@ void setup_params(int *type, double *cost, double *epsilon, double* svr_eps, int
 	//TODO: deep copy might be safer than pointer copy
 	param.weight_label = WiLabels;
 	param.weight = Wi;
-	
+
+	// Phase B: both regularize_bias and nu (the -R and -n CLI flags) are
+	// now exposed at the R level, as 'regularizeBias' (default TRUE,
+	// restoring the Stage (ii) behavior for anyone who doesn't touch it)
+	// and 'nu' (default 0.5, matching upstream's own train.c CLI
+	// default; only meaningful for type=21, ONECLASS_SVM, which is now
+	// R-reachable too -- see setup_problem()/check_parameter() for the
+	// rest of one-class SVM's own validation). R-level LiblineaR()
+	// already enforces check_parameter()'s own constraints (bias==1 for
+	// regularizeBias=FALSE, allowed solver types) proactively with a
+	// clear stop() before this is ever reached, but check_parameter()
+	// below is still the final authority.
+	param.regularize_bias = *regularizeBias;
+	param.nu = *nu;
+
 	if(*cross>0)
 	{
 		flag_cross_validation = 1; 
@@ -211,7 +258,7 @@ void setup_params(int *type, double *cost, double *epsilon, double* svr_eps, int
 		nr_fold = 0;
 	}
 
-	if(*useInitC){ // only for find_parameter_C
+	if(*useInitC){ // only for do_find_parameter_C() (calls upstream's find_parameters())
 		flag_C_specified = 1;
 	} else {
 		flag_C_specified = 0;
@@ -223,8 +270,8 @@ void setup_params(int *type, double *cost, double *epsilon, double* svr_eps, int
 		if(!flag_cross_validation)
 			nr_fold = 5;
 		
-		if(param.solver_type != L2R_LR && param.solver_type != L2R_L2LOSS_SVC){
-			error("Warm-start parameter search only available for L2R_LR and L2R_L2LOSS_SVC\n");
+		if(param.solver_type != L2R_LR && param.solver_type != L2R_L2LOSS_SVC && param.solver_type != L2R_L2LOSS_SVR){
+			error("Warm-start parameter search only available for L2R_LR, L2R_L2LOSS_SVC and L2R_L2LOSS_SVR\n");
 		}
 	} else {
 		flag_find_C = 0;
@@ -264,6 +311,17 @@ void setup_params(int *type, double *cost, double *epsilon, double* svr_eps, int
 			case L2R_L1LOSS_SVR_DUAL:
 			case L2R_L2LOSS_SVR_DUAL:
 				param.eps = 0.1;
+				break;
+			// Phase B: type=21 (ONECLASS_SVM) is now R-reachable. Without
+			// this case, epsilon=NULL would leave param.eps at its -1
+			// sentinel (invalid, would fail check_parameter's eps<=0
+			// rejection) instead of routing to a real default, unlike
+			// every other solver type. Matches upstream's own train.c
+			// CLI default for -s 21 (0.01, called out as the one
+			// exception in its help text: "Dual maximal violation <= eps
+			// ... default 0.1 except 0.01 for -s 21").
+			case ONECLASS_SVM:
+				param.eps = 0.01;
 				break;
 		}
 	}

@@ -75,6 +75,23 @@ m_svm <- LiblineaR(x, y, type = 2)   # L2-loss SVM
 dim(m_lr$W)   # one row per class (3 classes, multi-class problem)
 ```
 
+### Outlier/novelty detection: one-class SVM (`type=21`)
+
+`type=21` fits a one-class SVM: unlike every other `type`, it is
+unsupervised. `target` is still required (its length must match the number
+of rows of `data`) but its *values* are ignored. `bias` must be `<= 0` (this
+solver has no bias-term concept), and `nu` (in (0, 1), default 0.5) is an
+upper bound on the fraction of training points that may be treated as
+outliers. `predict()` returns `1` for inliers and `-1` for outliers, and
+`decisionValues=TRUE` additionally returns the raw signed distance to the
+decision boundary (positive means inlier).
+
+```{r oneclass}
+m_oc <- LiblineaR(x, y, type = 21, bias = -1, nu = 0.1)
+p_oc <- predict(m_oc, newx = x, decisionValues = TRUE)
+table(p_oc$predictions)
+```
+
 ## `bias`, `epsilon`, `svr_eps`: what the defaults actually mean
 
 **`bias`** (default `1`): if `bias > 0`, every row gets an extra constant
@@ -145,10 +162,12 @@ Three complementary tools:
   returns the CV accuracy (classification) or MSE (regression) as a single
   number — no model object. Useful for evaluating one specific `cost`.
 - **`findC=TRUE`**: automatic search for a good `cost`, using repeated
-  cross-validation internally. Only supported for `type=0` and `type=2` (the
-  primal L2-regularized solvers); any other `type` raises an error. Returns
-  the best `cost` found, not a model — retrain with that value to get the
-  actual model.
+  cross-validation internally. Supported for `type=0`, `type=2` (the primal
+  L2-regularized classification solvers) and `type=11` (primal L2-loss SVR,
+  which additionally searches `svr_eps`); any other `type` raises an error.
+  Returns the best `cost` found (types 0, 2), or a named list
+  `list(C=..., svr_eps=...)` (type 11 only), not a model — retrain with
+  those values to get the actual model.
 
 ```{r cost}
 co <- heuristicC(x)

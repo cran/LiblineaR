@@ -19,14 +19,14 @@ LiblineaR.R and predict.R files.
 extern void predictLinear(double *Y, double *X, double *W, int *decisionValues, double *DecisionValues, int *proba, double *Probabilities, 
         int *nbClass, int *nbDim, int *nbSamples, int *sparse, int *rowindex, int *colindex, double *bias, int *labels, int *type);
 
-extern void trainLinear(double *W_ret, int* labels_ret, double *X, double *Y, int *nbSamples, int *nbDim, int *sparse, int *rowindex, int *colindex, 
-                 double *bi, int *type, double *cost, double *epsilon, double* svr_eps, int *nrWi, double *Wi, int *WiLabels, int *cross, int *verbose, int *findC, int *useInitC);
+extern void trainLinear(double *W_ret, int* labels_ret, double *X, double *Y, int *nbSamples, int *nbDim, int *sparse, int *rowindex, int *colindex,
+                 double *bi, int *type, double *cost, double *epsilon, double* svr_eps, int *nrWi, double *Wi, int *WiLabels, int *cross, int *verbose, int *findC, int *useInitC, int *regularizeBias, double *bestP_ret, double *nu);
 
 
-        
+
 static const R_CMethodDef CEntries[] = {
     {"predictLinear", (DL_FUNC) &predictLinear, 16},
-    {"trainLinear",   (DL_FUNC) &trainLinear,   21},
+    {"trainLinear",   (DL_FUNC) &trainLinear,   24},
     {NULL, NULL, 0}
 };
 

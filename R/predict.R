@@ -20,11 +20,16 @@
 #'   Default is \code{FALSE}.
 #' @param decisionValues Logical indicating whether model decision values should
 #'   be computed and returned. Only possible for classification models
-#'   (\code{type}<10). Default is \code{FALSE}.
+#'   (\code{type}<10) and one-class SVM (\code{type}=21, where the decision
+#'   value is the signed distance to the decision boundary, i.e.
+#'   \code{w \%*\% x - rho}; positive means inlier). Not possible for
+#'   regression models (\code{type} 11-13). Default is \code{FALSE}.
 #' @param ... Currently not used
-#' 
+#'
 #' @return 	By default, the returned value is a list with a single entry:
-#' \item{predictions}{A vector of predicted labels (or values for regression).}
+#' \item{predictions}{A vector of predicted labels (regression: predicted
+#'   values; one-class SVM, \code{type}=21: \code{1} for inliers, \code{-1}
+#'   for outliers).}
 #' If \code{proba} is set to \code{TRUE}, and the model is a logistic
 #' regression, an additional entry is returned:
 #' \item{probabilities}{An n x k matrix (k number of classes) of the class
@@ -32,7 +37,9 @@
 #' If \code{decisionValues} is set to \code{TRUE}, and the model is not a
 #' regression model, an additional entry is returned:
 #' \item{decisionValues}{An n x k matrix (k number of classes) of the model
-#'   decision values. The columns of this matrix are named after class labels.}
+#'   decision values. The columns of this matrix are named after class labels
+#'   (for one-class SVM, k=1 and the column is unnamed, since there are no
+#'   class labels for this solver).}
 #' 
 #' @references
 #' 	\itemize{
@@ -44,8 +51,8 @@
 #' \url{https://www.csie.ntu.edu.tw/~cjlin/liblinear/}
 #' }
 #' 
-#' @author Thibault Helleputte \email{thibault.helleputte@@dnalytics.com} and\cr
-#'   Jerome Paul \email{jerome.paul@@dnalytics.com} and Pierre Gramme.\cr
+#' @author Thibault Helleputte \email{thibault.helleputte@@dnalytics.com}.\cr
+#'   Co-authored through version 2.10-26 by Jerome Paul and Pierre Gramme.\cr
 #'   Based on C/C++-code by Chih-Chung Chang and Chih-Jen Lin
 #' 
 #' @note If the data on which the model has been fitted have been centered
@@ -92,11 +99,12 @@ predict.LiblineaR<-function(object, newx, proba=FALSE, decisionValues=FALSE,...)
         }
     }
     
-    # Type 
-    if(!object$Type %in% c(0:7,11:13)){
-        stop("Invalid model object: Wrong value for 'type'. Must be an integer between 0 and 7  or between 11 and 13 included.\n")
+    # Type
+    if(!object$Type %in% c(0:7,11:13,21)){
+        stop("Invalid model object: Wrong value for 'type'. Must be an integer between 0 and 7, between 11 and 13, or 21 (one-class SVM).\n")
     }
-    isRegression = object$Type>=11
+    isRegression = object$Type>=11 && object$Type<=13
+    isOneClassSVM = object$Type==21
     
     # Bias
     b = object$Bias
@@ -131,7 +139,13 @@ predict.LiblineaR<-function(object, newx, proba=FALSE, decisionValues=FALSE,...)
             decisionValues=FALSE
         }
         else{
-            DecisionValues=matrix(ncol=n*length(object$ClassNames),nrow=1,data=0)
+            # Sized from object$NbClass, not length(object$ClassNames):
+            # the C loop (do_predict(), src/predictLinear.c) always writes
+            # model_->nr_class values per sample regardless of type, but
+            # object$ClassNames is NULL (length 0) for one-class SVM
+            # (type=21) -- using its length here previously under-allocated
+            # this buffer for that type specifically, corrupting memory.
+            DecisionValues=matrix(ncol=n*object$NbClass,nrow=1,data=0)
         }
     }
     
@@ -169,7 +183,13 @@ predict.LiblineaR<-function(object, newx, proba=FALSE, decisionValues=FALSE,...)
     )
     
     result=list()
-    if(isRegression)
+    if(isRegression || isOneClassSVM)
+        # For one-class SVM, ret[[1]] is already +1 (inlier) / -1 (outlier),
+        # matching upstream LIBLINEAR's own predict() output for this
+        # solver directly (see check_oneclass_model() branch in
+        # predict_values(), src/linear.cpp) -- object$ClassNames is NULL
+        # for this type (set at training time), so mapping through it like
+        # the classification branch below would silently produce NULL.
         result$predictions=ret[[1]]
     else
         result$predictions=object$ClassNames[as.integer(ret[[1]])]
@@ -180,8 +200,15 @@ predict.LiblineaR<-function(object, newx, proba=FALSE, decisionValues=FALSE,...)
     }
     
     if(decisionValues){
-        result$decisionValues=matrix(ncol=length(object$ClassNames),nrow=n,data=ret[[5]],byrow=TRUE)
-        colnames(result$decisionValues)=object$ClassNames
+        result$decisionValues=matrix(ncol=object$NbClass,nrow=n,data=ret[[5]],byrow=TRUE)
+        if(isOneClassSVM)
+            # predict_values() (src/linear.cpp) only ever fills column 1
+            # (nr_w=1 for this solver: w %*% x - rho); column 2 is a
+            # buffer-sizing artifact (always 0, never written), dropped
+            # here rather than exposed as a meaningless second column.
+            result$decisionValues=result$decisionValues[,1,drop=FALSE]
+        else
+            colnames(result$decisionValues)=object$ClassNames
     }
     
     return(result)

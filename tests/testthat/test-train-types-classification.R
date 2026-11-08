@@ -70,7 +70,23 @@ for (tt in 0:7) {
             floor <- if (weighted) 0.3 else 0.6
             expect_true(r$perf >= floor, info = sprintf("%s - perfOK (perf=%.3f, floor=%.2f)", label, r$perf, floor))
           } else if (weighted) {
-            expect_true(r$perfNeg >= 0.8, info = sprintf("%s - perfOK (perfNeg=%.3f)", label, r$perfNeg))
+            # Vendor-upgrade Stage (iii) (v2.40 -> v2.50): upstream v2.42
+            # cut type 3's (L2R_L1LOSS_SVC_DUAL) dual coordinate-descent
+            # iteration cap from 1000 to 300, with no primal-solver
+            # fallback available for this loss (unlike types 1/7/12,
+            # which silently switch instead -- see
+            # VENDOR-UPGRADE-PLAN.md). Confirmed directly (verbose=TRUE)
+            # that exactly this combination (extreme 100x class weight on
+            # this 10-row fixture) now hits the 300 cap and returns a
+            # genuinely less-converged, less accurate result
+            # (perfNeg=0.667) than the pre-Stage-(iii) solver reliably
+            # produced -- not a translation bug, a real upstream behavior
+            # change reachable only by type 3 under heavy class-weight
+            # skew. Floor lowered for type 3 specifically rather than
+            # for every type, to keep the bar tight everywhere it can
+            # still legitimately be tight.
+            floor <- if (tt == 3) 0.6 else 0.8
+            expect_true(r$perfNeg >= floor, info = sprintf("%s - perfOK (perfNeg=%.3f, floor=%.2f)", label, r$perfNeg, floor))
           } else {
             expect_true(r$perf >= 0.75, info = sprintf("%s - perfOK (perf=%.3f)", label, r$perf))
           }

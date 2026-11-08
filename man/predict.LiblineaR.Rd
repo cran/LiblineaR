@@ -26,13 +26,18 @@ Default is \code{FALSE}.}
 
 \item{decisionValues}{Logical indicating whether model decision values should
 be computed and returned. Only possible for classification models
-(\code{type}<10). Default is \code{FALSE}.}
+(\code{type}<10) and one-class SVM (\code{type}=21, where the decision
+value is the signed distance to the decision boundary, i.e.
+\code{w \%*\% x - rho}; positive means inlier). Not possible for
+regression models (\code{type} 11-13). Default is \code{FALSE}.}
 
 \item{...}{Currently not used}
 }
 \value{
 By default, the returned value is a list with a single entry:
-\item{predictions}{A vector of predicted labels (or values for regression).}
+\item{predictions}{A vector of predicted labels (regression: predicted
+  values; one-class SVM, \code{type}=21: \code{1} for inliers, \code{-1}
+  for outliers).}
 If \code{proba} is set to \code{TRUE}, and the model is a logistic
 regression, an additional entry is returned:
 \item{probabilities}{An n x k matrix (k number of classes) of the class
@@ -40,7 +45,9 @@ regression, an additional entry is returned:
 If \code{decisionValues} is set to \code{TRUE}, and the model is not a
 regression model, an additional entry is returned:
 \item{decisionValues}{An n x k matrix (k number of classes) of the model
-  decision values. The columns of this matrix are named after class labels.}
+  decision values. The columns of this matrix are named after class labels
+  (for one-class SVM, k=1 and the column is unnamed, since there are no
+  class labels for this solver).}
 }
 \description{
 The function applies a model (classification or regression) produced by the \code{LiblineaR} function to every row of a
@@ -66,8 +73,8 @@ Journal of Machine Learning Research 9(2008), 1871-1874.\cr
 \code{\link{LiblineaR}}
 }
 \author{
-Thibault Helleputte \email{thibault.helleputte@dnalytics.com} and\cr
-  Jerome Paul \email{jerome.paul@dnalytics.com} and Pierre Gramme.\cr
+Thibault Helleputte \email{thibault.helleputte@dnalytics.com}.\cr
+  Co-authored through version 2.10-26 by Jerome Paul and Pierre Gramme.\cr
   Based on C/C++-code by Chih-Chung Chang and Chih-Jen Lin
 }
 \keyword{classes}

@@ -1,10 +1,11 @@
 LiblineaR is a wrapper around the LIBLINEAR C/C++ library for machine learning.
-LIBLINEAR is a simple library for solving large-scale regularized linear 
-classification and regression. It currently supports 
+LIBLINEAR is a simple library for solving large-scale regularized linear
+classification and regression. It currently supports
 - L2-regularized logistic regression/L2-loss support vector classification (SVM)/
     L1-loss support vector classification (SVM)
 - L1-regularized L2-loss support vector classification/L1-regularized logistic regression
-- L2-regularized L2-loss support vector regression/L1-loss support vector regression. 
+- L2-regularized L2-loss support vector regression/L1-loss support vector regression
+- one-class support vector machines for outlier/novelty detection.
 
 The main features of LiblineaR include multi-class classification (one-vs-the rest, and
 Crammer & Singer method), cross validation for model selection, probability
@@ -137,3 +138,13 @@ min_{\alpha}  0.5 \sum_m ||w_m(\alpha)||^2 + \sum_i \sum_m e^m_i alpha^m_i
 where w_m(\alpha) = \sum_i \alpha^m_i x_i,
 and C^m_i = C if m  = y_i,
     C^m_i = 0 if m != y_i.
+
+For one-class support vector machines (-s 21), we solve
+
+min_{w,rho,xi} 0.5 w^Tw - rho + 1/(nu*l) \sum xi_i
+    s.t.  w^Tx_i >= rho - xi_i,
+          xi_i >= 0,
+
+where nu in (0,1) is an upper bound on the fraction of training examples
+that may be treated as outliers. A test point x is classified as an
+inlier if w^Tx - rho > 0, an outlier otherwise.

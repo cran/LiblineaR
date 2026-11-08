@@ -57,6 +57,19 @@
 #'         \item 13 -- L2-regularized L1-loss support vector regression (dual)
 #'       }
 #'     }
+#'     \item{for outlier/novelty detection}{
+#'       \itemize{
+#'         \item 21 -- one-class support vector machine (dual). Unsupervised:
+#'           \code{target} is still required (its length must match the number
+#'           of rows of \code{data}) but its values are ignored -- only
+#'           \code{data} is used. Requires \code{bias <= 0} (no bias term is
+#'           supported for this solver). See \code{nu} below. \code{predict}
+#'           returns \code{1} for inliers and \code{-1} for outliers (see
+#'           \code{\link{predict.LiblineaR}}); \code{decisionValues=TRUE}
+#'           additionally returns the raw signed distance to the decision
+#'           boundary.
+#'       }
+#'     }
 #'   }
 #' 
 #' @param cost cost of constraints violation (default: 1). Rules the trade-off
@@ -105,17 +118,38 @@
 #'   classes are largely unbalanced. Default is 0.
 #' @param verbose if \code{TRUE}, information are printed. Default is
 #'   \code{FALSE}.
-#' @param findC if \code{findC} is \code{TRUE} runs a cross-validation of \code{cross} folds to find the best cost (C) value (works only for type 0 and 2).
-#'        Cross validation is conducted many times under parameters C = start_C, 2*start_C, 4*start_C, 8*start_C, ..., and finds the best one with the highest cross validation accuracy.
+#' @param findC if \code{findC} is \code{TRUE} runs a cross-validation of \code{cross} folds to find the best cost (C) value (works only for type 0, 2 and 11).
+#'        Cross validation is conducted many times under parameters C = start_C, 2*start_C, 4*start_C, 8*start_C, ..., and finds the best one with the highest cross validation accuracy
+#'        (or, for type 11, the lowest cross-validation mean squared error, additionally searching \code{svr_eps} the same way).
 #'        The procedure stops when the models of all folds become stable or C reaches the maximal value of 1024.
 #' @param useInitC if \code{useInitC} is \code{TRUE} (default) \code{cost} is used as the smallest start_C value of the search range (\code{findC} has to be \code{TRUE}).
-#'        If \code{useInitC} is \code{FALSE}, then the procedure calculates a small enough start_C.
+#'        If \code{useInitC} is \code{FALSE}, then the procedure calculates a small enough start_C itself.
+#'        For \code{type}=11, \code{useInitC} additionally governs the \code{svr_eps} search: when \code{TRUE}, \code{svr_eps} sets an upper
+#'        anchor point for where the (always-descending, always ending at 0) \code{svr_eps} sweep begins -- LIBLINEAR's own
+#'        \code{find_parameters()} always tests every value from that anchor down to 0 and keeps whichever minimizes cross-validation error,
+#'        so a small \code{svr_eps} relative to the scale of \code{target} can collapse the sweep to testing only \code{svr_eps=0}.
+#'        When \code{FALSE}, the full default 20-step sweep (anchored at the largest \code{abs(target)} value) is used instead.
+#' @param regularizeBias if \code{FALSE}, the bias term is excluded from the
+#'   L1/L2 regularization penalty (upstream LIBLINEAR's \code{-R} flag).
+#'   Default is \code{TRUE} (the bias term is regularized like every other
+#'   coefficient, matching this package's behavior prior to this argument's
+#'   introduction). Only valid combined with \code{bias == 1} exactly, and
+#'   only for \code{type} 0, 2, 5, 6 or 11; using \code{FALSE} elsewhere, or
+#'   with a different \code{bias}, raises an error. Upstream LIBLINEAR's own
+#'   documentation advises against using this unless you specifically know
+#'   why you need it.
+#' @param nu the \code{nu} parameter of one-class SVM (\code{type} 21 only,
+#'   ignored otherwise): an upper bound on the fraction of training examples
+#'   that may be treated as outliers, and a lower bound on the fraction of
+#'   examples that end up as support vectors. Must be in (0, 1). Default is
+#'   0.5, matching upstream LIBLINEAR's own default.
 #' @param ... for backwards compatibility, parameter \code{labels} may be
 #'   provided instead of \code{target}. A warning will then be issued, or an
 #'   error if both are present. Other extra parameters are ignored.
 #' 
 #' @return
-#' 	If \code{cross}>0, the average accuracy (classification) or mean square error (regression) computed over \code{cross} runs of cross-validation is returned.\cr\cr
+#' 	If \code{cross}>0 (and \code{findC} is \code{FALSE}), the average accuracy (classification) or mean square error (regression) computed over \code{cross} runs of cross-validation is returned.\cr\cr
+#'  If \code{findC} is \code{TRUE}, the best \code{cost} value found is returned; for \code{type}=11, a named list \code{list(C=..., svr_eps=...)} with both best values is returned instead of a plain number.\cr\cr
 #' Otherwise, an object of class \code{"LiblineaR"} containing the fitted model is returned, including:
 #' \item{TypeDetail}{A string describing the type of model fitted, as determined by \code{type}.}
 #' \item{Type}{An integer corresponding to \code{type}.}
@@ -133,8 +167,8 @@
 #' \url{https://www.csie.ntu.edu.tw/~cjlin/liblinear/}
 #' }
 #' 
-#' @author Thibault Helleputte \email{thibault.helleputte@@dnalytics.com} and\cr
-#'   Jerome Paul \email{jerome.paul@@dnalytics.com} and Pierre Gramme.\cr
+#' @author Thibault Helleputte \email{thibault.helleputte@@dnalytics.com}.\cr
+#'   Co-authored through version 2.10-26 by Jerome Paul and Pierre Gramme.\cr
 #'   Based on C/C++-code by Chih-Chung Chang and Chih-Jen Lin
 #' 
 #' @note Classification models usually perform better if each dimension of the data is first centered and scaled.
@@ -284,7 +318,7 @@
 #' @export
 
 ### Implementation ####
-LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bias=1, wi=NULL, cross=0, verbose=FALSE, findC=FALSE, useInitC=TRUE, ...) {
+LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bias=1, wi=NULL, cross=0, verbose=FALSE, findC=FALSE, useInitC=TRUE, regularizeBias=TRUE, nu=0.5, ...) {
 	# <Arg preparation>
   pd = .prepareData(data, "data")
   data = pd$data; n = pd$n; p = pd$p; sparse = pd$sparse; sparse2 = pd$sparse2
@@ -314,6 +348,10 @@ LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bi
 		stop("'epsilon' must be NULL or a single number.")
 	if(!is.null(svr_eps) && (!is.numeric(svr_eps) || length(svr_eps)!=1 || is.na(svr_eps)))
 		stop("'svr_eps' must be NULL or a single number.")
+	if(!is.logical(regularizeBias) || length(regularizeBias)!=1 || is.na(regularizeBias))
+		stop("'regularizeBias' must be TRUE or FALSE.")
+	if(!is.numeric(nu) || length(nu)!=1 || is.na(nu) || nu<=0 || nu>=1)
+		stop("'nu' must be a single number strictly between 0 and 1.")
 
 	# Bias
 	b = if(bias > 0) bias else -1 # to ensure backward compatibility with boolean
@@ -322,17 +360,41 @@ LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bi
 	typesLabels = c("L2-regularized logistic regression (primal)", "L2-regularized L2-loss support vector classification (dual)", "L2-regularized L2-loss support vector classification (primal)", "L2-regularized L1-loss support vector classification (dual)",
 									"support vector classification by Crammer and Singer", "L1-regularized L2-loss support vector classification", "L1-regularized logistic regression", "L2-regularized logistic regression (dual)",
 									"", "", "",
-									"L2-regularized L2-loss support vector regression (primal)", "L2-regularized L2-loss support vector regression (dual)", "L2-regularized L1-loss support vector regression (dual)")
+									"L2-regularized L2-loss support vector regression (primal)", "L2-regularized L2-loss support vector regression (dual)", "L2-regularized L1-loss support vector regression (dual)",
+									"", "", "", "", "", "", "",
+									"one-class support vector machine (dual)")
 	typesLabels = gsub("[()]","",typesLabels)
 	typesCodes = c("L2R_LR", "L2R_L2LOSS_SVC_DUAL", "L2R_L2LOSS_SVC", "L2R_L1LOSS_SVC_DUAL",
 								 "MCSVM_CS", "L1R_L2LOSS_SVC", "L1R_LR", "L2R_LR_DUAL",
 								 "", "", "",
-								 "L2R_L2LOSS_SVR", "L2R_L2LOSS_SVR_DUAL", "L2R_L1LOSS_SVR_DUAL")
+								 "L2R_L2LOSS_SVR", "L2R_L2LOSS_SVR_DUAL", "L2R_L1LOSS_SVR_DUAL",
+								 "", "", "", "", "", "", "",
+								 "ONECLASS_SVM")
 	types=ifelse(typesCodes=="", "", paste0(typesLabels, " (", typesCodes, ")"))
 	if(!type %in% (which(types!="")-1))
 		stop("Unknown model type ",type,". Expecting one of: ", paste(which(types!="")-1, collapse=", "))
-	isRegression = type>=11
-	
+	isRegression = type>=11 && type<=13
+	isOneClassSVM = type==21
+
+	# One-class SVM (type=21): LIBLINEAR's check_parameter() rejects
+	# bias >= 0 outright for this solver (it has no bias-term concept),
+	# rather than silently ignoring it -- checked here proactively for a
+	# clear R-level error instead of the generic C-level "ERROR: ..."
+	# message-and-silently-return-garbage path.
+	if(isOneClassSVM && bias > 0)
+		stop("'bias' must be <= 0 (no bias term) for one-class SVM (type=21); LIBLINEAR does not support a bias term for this solver.")
+
+	# regularizeBias=FALSE (upstream's -R): check_parameter() requires
+	# bias==1 exactly and restricts this to types 0, 2, 5, 6 and 11 --
+	# checked here proactively for a clear R-level error, same reasoning
+	# as the one-class check just above.
+	if(!regularizeBias) {
+		if(!isTRUE(all.equal(b, 1)))
+			stop("'regularizeBias' can only be FALSE when 'bias' is exactly 1.")
+		if(!(type %in% c(0,2,5,6,11)))
+			stop("'regularizeBias' can only be FALSE for type 0, 2, 5, 6 or 11.")
+	}
+
 	# Epsilon: NULL or any non-positive value (including 0, which would otherwise
 	# be an unsatisfiable/hanging stopping criterion) routes to LIBLINEAR's own
 	# solver-appropriate default, applied in src/trainLinear.c's setup_params().
@@ -365,6 +427,21 @@ LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bi
 		isMulticlass = FALSE
 		targetLabels = NULL
 		nbClass = 2 # necessary for predict
+		nrWi = 0
+		Wi = NULL
+		WiLabels = NULL
+	} else if(isOneClassSVM) {
+		# One-class SVM is unsupervised: solve_oneclass_svm() (src/linear.cpp)
+		# never reads prob->y, and the resulting model has model_->label ==
+		# NULL (set directly by train()). 'target' is still required, and
+		# its length must still match nrow(data) (checked above, same as
+		# every other type), but its VALUES are ignored -- forced to 0 here
+		# rather than passed through, so a factor/character target can't
+		# produce a confusing as.double() coercion nobody will ever look at.
+		yC = rep(0, n)
+		isMulticlass = FALSE
+		targetLabels = NULL
+		nbClass = 2 # necessary for predict; matches model_->nr_class set by train()
 		nrWi = 0
 		Wi = NULL
 		WiLabels = NULL
@@ -452,17 +529,35 @@ LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bi
 			as.integer(verbose),
 			as.integer(findC),
 			as.integer(useInitC),
+			as.integer(regularizeBias),
+			# bestP_ret: only meaningfully overwritten by the C side when
+			# findC=TRUE and type=11 (may then come back as NA_REAL if
+			# the search itself failed). Passed in as a real, finite
+			# placeholder (not NA) specifically so NAOK is NOT needed
+			# here -- NAOK gates the whole .C() call's incoming-value
+			# check, and this package relies on that check catching
+			# NA/Inf in the actual training data (see
+			# test-input-validation.R); the C side is free to WRITE
+			# NA_REAL back into this buffer regardless, since NAOK only
+			# restricts what may be passed IN, not what a compiled
+			# routine returns.
+			as.double(-1),
+			as.double(nu),
 			PACKAGE="LiblineaR"
 			)
-	
+
 	if(cross==0 && !findC){
-		labels_ret = if(isRegression) NULL else ret[[2]]
-		
+		# copy_model() (src/linear.cpp) never writes labels_ret for a
+		# one-class model (model_->label is NULL, set by train()), so
+		# ret[[2]] would just be its uninitialized-to-0 R-side buffer --
+		# treated the same as regression (no class labels) here.
+		labels_ret = if(isRegression || isOneClassSVM) NULL else ret[[2]]
+
 		# classNames is a lookup table for conversion between outputs of C code and initial levels of target
 		classNames = {
-			if(isRegression) NULL 
+			if(isRegression || isOneClassSVM) NULL
 			else if(is.logical(targetLabels)) as.logical(labels_ret)
-			else if(is.null(levels(targetLabels))) labels_ret 
+			else if(is.null(levels(targetLabels))) labels_ret
 			else factor(levels(targetLabels)[labels_ret], levels=levels(targetLabels))
 		}
 		
@@ -486,6 +581,11 @@ LiblineaR<-function(data, target, type=0, cost=1, epsilon=NULL, svr_eps=NULL, bi
 		return(m)
 	}
 	else{
+		# ret[[23]] is bestP_ret: only meaningfully set (by
+		# do_find_parameter_C(), src/trainLinear.c) when findC=TRUE and
+		# type==11 -- NA otherwise, matching the NA_real_ this call sent in.
+		if(findC && type==11)
+			return(list(C=ret[[1]][1], svr_eps=ret[[23]][1]))
 		return(ret[[1]][1])
 	}
 }
