@@ -2,8 +2,8 @@ Encoding: UTF-8
 Language: en-US
 Package: LiblineaR
 Title: Linear Predictive Models Based on the LIBLINEAR C/C++ Library
-Version: 2.50-1
-Date: 2026-11-03
+Version: 2.50-2
+Date: 2026-11-08
 Authors@R: c(
         person("Thibault","Helleputte",email="thibault.helleputte@dnalytics.com",role=c("cre","aut","cph")),
         person("Jérôme","Paul",role=c("aut"),comment="Co-author through version 2.10-26; not involved in development of later versions"),
@@ -35,7 +35,7 @@ Config/testthat/edition: 3
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2026-11-03 15:58:43 UTC; thibault
+Packaged: 2026-11-08 18:32:30 UTC; thibault
 Author: Thibault Helleputte [cre, aut, cph],
   Jérôme Paul [aut] (Co-author through version 2.10-26; not involved in
     development of later versions),
@@ -45,4 +45,4 @@ Author: Thibault Helleputte [cre, aut, cph],
     (src/linear.cpp, linear.h, newton.cpp, newton.h); see LICENSE.note)
 Maintainer: Thibault Helleputte <thibault.helleputte@dnalytics.com>
 Repository: CRAN
-Date/Publication: 2026-11-08 09:20:02 UTC
+Date/Publication: 2026-11-09 00:10:32 UTC

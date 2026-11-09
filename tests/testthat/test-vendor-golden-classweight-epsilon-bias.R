@@ -73,10 +73,11 @@ test_that("type 0 (L2R_LR primal) W matches frozen golden grid across wi x epsil
       for (bias in bias_list) {
         key <- paste("type", type, "wi", wi_name, "eps", eps_name, "bias", bias, sep = "_")
         set.seed(4242)
-        m <- LiblineaR(f$x, f$y, type = type, cost = 1,
-                        epsilon = epsilon_list[[eps_name]], bias = bias,
-                        wi = wi_list[[wi_name]])
-        expect_equal(unname(m$W), ref[[key]], tolerance = tol_primal, label = key)
+        g <- ll_golden_fit(data = f$x, target = f$y, type = type, cost = 1,
+                           epsilon = epsilon_list[[eps_name]], bias = bias,
+                           wi = wi_list[[wi_name]])
+        expect_golden(unname(g$model$W), ref[[key]],
+                      key = key, fit = g, exact_tol = tol_primal)
       }
     }
   }
@@ -95,10 +96,11 @@ test_that("type 1 (L2R_L2LOSS_SVC_DUAL) W matches frozen golden grid across wi x
       for (bias in bias_list) {
         key <- paste("type", type, "wi", wi_name, "eps", eps_name, "bias", bias, sep = "_")
         set.seed(4242)
-        m <- LiblineaR(f$x, f$y, type = type, cost = 1,
-                        epsilon = epsilon_list[[eps_name]], bias = bias,
-                        wi = wi_list[[wi_name]])
-        expect_equal(unname(m$W), ref[[key]], tolerance = tol_dual, label = key)
+        g <- ll_golden_fit(data = f$x, target = f$y, type = type, cost = 1,
+                           epsilon = epsilon_list[[eps_name]], bias = bias,
+                           wi = wi_list[[wi_name]])
+        expect_golden(unname(g$model$W), ref[[key]],
+                      key = key, fit = g, exact_tol = tol_dual)
       }
     }
   }
@@ -116,10 +118,11 @@ test_that("type 2 (L2R_L2LOSS_SVC primal) W matches frozen golden grid across wi
       for (bias in bias_list) {
         key <- paste("type", type, "wi", wi_name, "eps", eps_name, "bias", bias, sep = "_")
         set.seed(4242)
-        m <- LiblineaR(f$x, f$y, type = type, cost = 1,
-                        epsilon = epsilon_list[[eps_name]], bias = bias,
-                        wi = wi_list[[wi_name]])
-        expect_equal(unname(m$W), ref[[key]], tolerance = tol_primal, label = key)
+        g <- ll_golden_fit(data = f$x, target = f$y, type = type, cost = 1,
+                           epsilon = epsilon_list[[eps_name]], bias = bias,
+                           wi = wi_list[[wi_name]])
+        expect_golden(unname(g$model$W), ref[[key]],
+                      key = key, fit = g, exact_tol = tol_primal)
       }
     }
   }
@@ -137,10 +140,11 @@ test_that("type 3 (L2R_L1LOSS_SVC_DUAL) W matches frozen golden grid across wi x
       for (bias in bias_list) {
         key <- paste("type", type, "wi", wi_name, "eps", eps_name, "bias", bias, sep = "_")
         set.seed(4242)
-        m <- LiblineaR(f$x, f$y, type = type, cost = 1,
-                        epsilon = epsilon_list[[eps_name]], bias = bias,
-                        wi = wi_list[[wi_name]])
-        expect_equal(unname(m$W), ref[[key]], tolerance = tol_dual, label = key)
+        g <- ll_golden_fit(data = f$x, target = f$y, type = type, cost = 1,
+                           epsilon = epsilon_list[[eps_name]], bias = bias,
+                           wi = wi_list[[wi_name]])
+        expect_golden(unname(g$model$W), ref[[key]],
+                      key = key, fit = g, exact_tol = tol_dual)
       }
     }
   }

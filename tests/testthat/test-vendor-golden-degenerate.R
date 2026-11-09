@@ -55,15 +55,17 @@ REGR_TYPES <- c(11, 12, 13)
 # and nlevels(y) for the 3-class boundary scenario.
 check_type <- function(x, y, type, key, expect_nrow) {
   set.seed(TRAINING_SEED)
-  m <- LiblineaR(x, y, type = type, cost = 1, svr_eps = 0.01)
-  w <- unname(m$W)
+  g <- ll_golden_fit(data = x, target = y, type = type, cost = 1,
+                     svr_eps = 0.01)
+  w <- unname(g$model$W)
 
   expect_false(any(is.na(w)), label = paste(key, "no NA"))
   expect_true(all(is.finite(w)), label = paste(key, "all finite"))
   expect_equal(nrow(w), expect_nrow, label = paste(key, "nrow(W)"))
   expect_equal(ncol(w), ncol(x) + 1, label = paste(key, "ncol(W)"))
 
-  expect_equal(w, golden$results[[key]], tolerance = GOLDEN_TOL, label = key)
+  expect_golden(w, golden$results[[key]],
+                key = key, fit = g, exact_tol = GOLDEN_TOL)
 }
 
 # Runs one scenario's full type grid and returns how many types were

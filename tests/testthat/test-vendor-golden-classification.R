@@ -53,9 +53,11 @@ run_type_grid <- function(type) {
           key <- paste("type", type, "cost", cost, "bias", bias, ds_name, eps_name, sep = "_")
 
           set.seed(TRAINING_SEED)
-          m <- LiblineaR(ds$x, ds$y, type = type, cost = cost, bias = bias, epsilon = eps)
+          g <- ll_golden_fit(data = ds$x, target = ds$y, type = type,
+                             cost = cost, bias = bias, epsilon = eps)
 
-          expect_equal(unname(m$W), golden$results[[key]], tolerance = GOLDEN_TOL, label = key)
+          expect_golden(unname(g$model$W), golden$results[[key]],
+                        key = key, fit = g, exact_tol = GOLDEN_TOL)
           n <- n + 1
         }
       }

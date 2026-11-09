@@ -101,12 +101,11 @@ test_that("SVR types 11-13 match frozen golden W across the cost x bias x svr_ep
               "_", ds_name
             )
             set.seed(42)
-            m <- suppressWarnings(
-              LiblineaR(ds$x, ds$y, type = t, cost = co, bias = bi, svr_eps = ep)
-            )
-            expect_equal(
-              unname(m$W), golden[[key]],
-              tolerance = tol, label = key
+            g <- ll_golden_fit(data = ds$x, target = ds$y, type = t,
+                               cost = co, bias = bi, svr_eps = ep)
+            expect_golden(
+              unname(g$model$W), golden[[key]],
+              key = key, fit = g, exact_tol = tol
             )
           }
         }

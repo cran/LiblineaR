@@ -121,11 +121,10 @@ test_that("type 11 (L2R_L2LOSS_SVR primal) W matches frozen golden grid across e
       for (co in costs) {
         key <- paste0("type", t, "_eps", eps_name, "_cost", co, "_", ds_name)
         set.seed(999)
-        m <- suppressWarnings(
-          LiblineaR(ds$x, ds$y, type = t, cost = co,
-                    epsilon = epsilon_list[[eps_name]])
-        )
-        expect_equal(unname(m$W), golden[[key]], tolerance = tol, label = key)
+        g <- ll_golden_fit(data = ds$x, target = ds$y, type = t, cost = co,
+                           epsilon = epsilon_list[[eps_name]])
+        expect_golden(unname(g$model$W), golden[[key]],
+                      key = key, fit = g, exact_tol = tol)
       }
     }
   }
@@ -145,11 +144,10 @@ test_that("CONTROL: type 12 (L2R_L2LOSS_SVR_DUAL) W matches frozen golden grid a
       for (co in costs) {
         key <- paste0("type", t, "_eps", eps_name, "_cost", co, "_", ds_name)
         set.seed(999)
-        m <- suppressWarnings(
-          LiblineaR(ds$x, ds$y, type = t, cost = co,
-                    epsilon = epsilon_list[[eps_name]])
-        )
-        expect_equal(unname(m$W), golden[[key]], tolerance = tol, label = key)
+        g <- ll_golden_fit(data = ds$x, target = ds$y, type = t, cost = co,
+                           epsilon = epsilon_list[[eps_name]])
+        expect_golden(unname(g$model$W), golden[[key]],
+                      key = key, fit = g, exact_tol = tol)
       }
     }
   }
@@ -167,11 +165,10 @@ test_that("CONTROL: type 13 (L2R_L1LOSS_SVR_DUAL) W matches frozen golden grid a
       for (co in costs) {
         key <- paste0("type", t, "_eps", eps_name, "_cost", co, "_", ds_name)
         set.seed(999)
-        m <- suppressWarnings(
-          LiblineaR(ds$x, ds$y, type = t, cost = co,
-                    epsilon = epsilon_list[[eps_name]])
-        )
-        expect_equal(unname(m$W), golden[[key]], tolerance = tol, label = key)
+        g <- ll_golden_fit(data = ds$x, target = ds$y, type = t, cost = co,
+                           epsilon = epsilon_list[[eps_name]])
+        expect_golden(unname(g$model$W), golden[[key]],
+                      key = key, fit = g, exact_tol = tol)
       }
     }
   }

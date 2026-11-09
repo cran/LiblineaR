@@ -12,7 +12,7 @@
 
 <meta name="author" content="Thibault Helleputte, Jérôme Paul, Pierre Gramme" />
 
-<meta name="date" content="2026-11-03" />
+<meta name="date" content="2026-11-08" />
 
 <title>Introduction to LiblineaR</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Introduction to LiblineaR</h1>
 <h4 class="author">Thibault Helleputte, Jérôme Paul, Pierre Gramme</h4>
-<h4 class="date">2026-11-03</h4>
+<h4 class="date">2026-11-08</h4>
 
 
 
@@ -589,11 +589,11 @@ retrain with those values to get the actual model.</li>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>acc <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">cost =</span> co, <span class="at">cross =</span> <span class="dv">5</span>)</span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>acc</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; [1] 0.8533333</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; [1] 0.8266667</span></span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
 <span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>best_cost <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">findC =</span> <span class="cn">TRUE</span>, <span class="at">cross =</span> <span class="dv">5</span>)</span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>best_cost</span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; [1] 128</span></span>
 <span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a></span>
 <span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>m_final <span class="ot">&lt;-</span> <span class="fu">LiblineaR</span>(x, y, <span class="at">type =</span> <span class="dv">0</span>, <span class="at">cost =</span> best_cost)</span></code></pre></div>
 </div>
@@ -605,18 +605,18 @@ any extra columns dropped automatically, matched by column name if
 <code>newx</code> has names.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">predict</span>(m_final, x)</span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">as.character</span>(p<span class="sc">$</span>predictions) <span class="sc">==</span> <span class="fu">as.character</span>(y))</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.96</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.98</span></span>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co"># Probabilities are only available for logistic regression (type 0, 6, 7).</span></span>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>p_proba <span class="ot">&lt;-</span> <span class="fu">predict</span>(m_final, x, <span class="at">proba =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="fu">head</span>(p_proba<span class="sc">$</span>probabilities)</span>
 <span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt;         setosa versicolor    virginica</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; [1,] 0.8863993 0.11360010 6.454844e-07</span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7930794 0.20691821 2.347123e-06</span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; [3,] 0.8546918 0.14530631 1.880086e-06</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; [4,] 0.8206192 0.17937588 4.943498e-06</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; [5,] 0.9053423 0.09465700 6.616330e-07</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; [6,] 0.9401467 0.05985248 8.078655e-07</span></span></code></pre></div>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; [1,] 0.9187274 0.08127258 2.274855e-15</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7787280 0.22127202 2.661388e-14</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; [3,] 0.8522928 0.14770717 1.261914e-14</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; [4,] 0.7895393 0.21046071 7.457035e-14</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; [5,] 0.9345800 0.06541998 2.035646e-15</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; [6,] 0.9752129 0.02478712 7.504930e-15</span></span></code></pre></div>
 </div>
 
 

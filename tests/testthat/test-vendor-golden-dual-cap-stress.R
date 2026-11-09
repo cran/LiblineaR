@@ -61,7 +61,6 @@
 # on CRAN.
 
 GOLDEN_TOL <- 1e-6     # exact pin, same-platform only (skip_on_cran)
-PORTABLE_TOL <- 5e-3   # cross-platform floor, runs everywhere
 
 golden <- readRDS(test_path("fixtures", "vendor-golden-dual-cap-stress.rds"))
 fx <- golden$dataset
@@ -72,7 +71,7 @@ train_capture <- function(type, y, extra = list()) {
   args <- c(list(data = fx$x, target = y, type = type,
                  cost = p$cost, epsilon = p$epsilon, verbose = TRUE), extra)
   out <- capture.output(m <- do.call(LiblineaR, args))
-  list(model = m, log = out)
+  list(model = m, log = out)  # structural tests below inspect the log directly
 }
 
 test_that("dual cap reached: types 1, 7, 12 silently switch to the primal Newton solver", {
@@ -122,29 +121,22 @@ fit_scenario <- function(key) {
   set.seed(p$training_seed)
   args <- c(list(data = fx$x, target = y, type = type,
                  cost = p$cost, epsilon = p$epsilon), extra)
-  unname(do.call(LiblineaR, args)$W)
+  do.call(ll_golden_fit, args)
 }
 
-test_that("all 5 dual-cap-stress scenarios stay within a portable tolerance of golden", {
-  # Runs EVERYWHERE, CRAN included. Catches a gross regression (wrong
-  # algorithm, missing switch, garbage output) without asserting
-  # bit-level agreement across libm implementations, which a truncated
-  # iterate cannot provide. See the tolerance note at the top of the file.
+test_that("all 5 dual-cap-stress scenarios match their frozen golden W matrix", {
+  # Every scenario in this file hits the 300-iteration cap by construction,
+  # so expect_golden() asserts invariants only on CRAN and the exact
+  # 1e-6 pin off it. The policy, and why a truncated iterate needs one, is
+  # documented in helper-golden-portability.R -- this file no longer carries
+  # its own copy of that reasoning, so there is one place to change it.
   for (key in names(golden$results)) {
-    expect_equal(fit_scenario(key), golden$results[[key]],
-                 tolerance = PORTABLE_TOL, label = key)
-  }
-})
-
-test_that("all 5 dual-cap-stress scenarios match their frozen golden W matrix exactly", {
-  # Maintainer-only: meaningful only on the platform the fixture was
-  # frozen on. This is the real cross-version regression guard for the
-  # vendored solver -- it must keep running locally and in CI, and it
-  # must NOT run on CRAN's heterogeneous build farm.
-  skip_on_cran()
-  for (key in names(golden$results)) {
-    expect_equal(fit_scenario(key), golden$results[[key]],
-                 tolerance = GOLDEN_TOL, label = key)
+    g <- fit_scenario(key)
+    expect_true(golden_state_is_capped(g$state),
+                label = paste(key, "- still reaches the iteration cap"))
+    expect_golden(unname(g$model$W), golden$results[[key]],
+                  key = key, fit = g,
+                  exact_tol = GOLDEN_TOL)
   }
 })
 

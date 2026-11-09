@@ -125,9 +125,17 @@ test_that("golden grid: type=21 W matches frozen values across nu, reproducible 
   # a LINEAR one-class SVM specifically, checked and expected -- not a
   # regression to chase, since this test's purpose is pinning reproducible
   # R-glue behavior, not demonstrating best-case one-class separation.
-  # testthat's default tolerance (no override) is used deliberately, since
-  # an explicit loose tolerance (e.g. 1e-6) would exceed these values'
-  # own magnitude and make the comparison meaningless.
+  # Because the solution IS zero to within rounding, the stored values are
+  # rounding noise, and testthat's default tolerance is RELATIVE -- so this
+  # test used to assert the relative agreement of two piles of noise. That
+  # is not a portable fact, and CRAN's arm64 legs duly failed it on 2.50-1
+  # (nu=0.1: -1.26e-07 vs the pinned -8.60e-08) for a solution that is
+  # correct on every platform. expect_golden_near_zero() asserts what IS
+  # portable here -- the solution is zero -- and keeps the exact pin off
+  # CRAN. An earlier note in this spot reasoned correctly that a 1e-6
+  # tolerance would exceed these values' own magnitude, then drew the wrong
+  # conclusion: the answer is not a tighter relative tolerance, it is to
+  # stop treating noise as signal.
   golden <- list(
     nu0.1 = structure(c(-8.60428193699178e-08, 8.32671340096089e-08, -8.01949085610593e-08), dim = c(1L, 3L)),
     nu0.5 = structure(c(-9.93730804054007e-08, 2.15979101907303e-08, -1.1605088907087e-08), dim = c(1L, 3L))
@@ -136,6 +144,6 @@ test_that("golden grid: type=21 W matches frozen values across nu, reproducible 
     set.seed(555)
     m <- LiblineaR(fc$x, oneclass_target, type = 21, bias = -1, nu = nu, epsilon = 1e-6)
     key <- paste0("nu", nu)
-    expect_equal(unname(m$W), golden[[key]], label = key)
+    expect_golden_near_zero(unname(m$W), golden[[key]], key = key)
   }
 })

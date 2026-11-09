@@ -50,6 +50,14 @@ fixture_classif3 <- function() {
 # order, so the index-based keys line up with the frozen fixture.
 GOLDEN_COSTS  <- c(0.01, 1, 100)
 GOLDEN_BIASES <- c(-1, 1)
+# Exact same-platform pin. Portability is handled by expect_golden() in
+# helper-golden-portability.R: scenarios whose solver converged are pinned
+# at this tolerance everywhere, while a scenario that stops at its iteration
+# cap is asserted on invariants only on CRAN and pinned exactly off it.
+# Several type-3 scenarios here are capped, and at least two of them
+# (cost=2 and cost=3 at bias=2) are bistable: CRAN's arm64 legs and a local
+# FMA build return a different basin entirely. No per-scenario registry is
+# needed any more -- the capped state is detected at run time.
 GOLDEN_TOL <- 1e-6
 
 golden_key <- function(fname, type, ci, bi) paste(fname, "type", type, "cost", ci, "bias", bi, sep = "_")
@@ -67,10 +75,12 @@ test_that("proba=TRUE probability matrices match frozen golden values across typ
     for (ci in seq_along(GOLDEN_COSTS)) {
       for (bi in seq_along(GOLDEN_BIASES)) {
         set.seed(42)
-        m <- LiblineaR(f$x, f$y, type = type, cost = GOLDEN_COSTS[ci], bias = GOLDEN_BIASES[bi])
-        p <- predict(m, f$x, proba = TRUE)
+        g <- ll_golden_fit(data = f$x, target = f$y, type = type,
+                           cost = GOLDEN_COSTS[ci], bias = GOLDEN_BIASES[bi])
+        p <- predict(g$model, f$x, proba = TRUE)
         k <- golden_key("classif2", type, ci, bi)
-        expect_equal(p$probabilities, golden$probabilities[[k]], tolerance = GOLDEN_TOL, label = k)
+        expect_golden(p$probabilities, golden$probabilities[[k]],
+                      key = k, fit = g, exact_tol = GOLDEN_TOL)
       }
     }
   }
@@ -88,10 +98,12 @@ test_that("proba=TRUE probability matrices match frozen golden values across typ
     for (ci in seq_along(GOLDEN_COSTS)) {
       for (bi in seq_along(GOLDEN_BIASES)) {
         set.seed(42)
-        m <- LiblineaR(f$x, f$y, type = type, cost = GOLDEN_COSTS[ci], bias = GOLDEN_BIASES[bi])
-        p <- predict(m, f$x, proba = TRUE)
+        g <- ll_golden_fit(data = f$x, target = f$y, type = type,
+                           cost = GOLDEN_COSTS[ci], bias = GOLDEN_BIASES[bi])
+        p <- predict(g$model, f$x, proba = TRUE)
         k <- golden_key("classif3", type, ci, bi)
-        expect_equal(p$probabilities, golden$probabilities[[k]], tolerance = GOLDEN_TOL, label = k)
+        expect_golden(p$probabilities, golden$probabilities[[k]],
+                      key = k, fit = g, exact_tol = GOLDEN_TOL)
       }
     }
   }
@@ -111,10 +123,12 @@ test_that("decisionValues=TRUE matrices match frozen golden values across type x
     for (ci in seq_along(GOLDEN_COSTS)) {
       for (bi in seq_along(GOLDEN_BIASES)) {
         set.seed(42)
-        m <- LiblineaR(f$x, f$y, type = type, cost = GOLDEN_COSTS[ci], bias = GOLDEN_BIASES[bi])
-        pd <- predict(m, f$x, decisionValues = TRUE)
+        g <- ll_golden_fit(data = f$x, target = f$y, type = type,
+                           cost = GOLDEN_COSTS[ci], bias = GOLDEN_BIASES[bi])
+        pd <- predict(g$model, f$x, decisionValues = TRUE)
         k <- golden_key("classif2", type, ci, bi)
-        expect_equal(pd$decisionValues, golden$decisionValues[[k]], tolerance = GOLDEN_TOL, label = k)
+        expect_golden(pd$decisionValues, golden$decisionValues[[k]],
+                      key = k, fit = g, exact_tol = GOLDEN_TOL)
       }
     }
   }
@@ -133,10 +147,12 @@ test_that("decisionValues=TRUE matrices match frozen golden values across type x
     for (ci in seq_along(GOLDEN_COSTS)) {
       for (bi in seq_along(GOLDEN_BIASES)) {
         set.seed(42)
-        m <- LiblineaR(f$x, f$y, type = type, cost = GOLDEN_COSTS[ci], bias = GOLDEN_BIASES[bi])
-        pd <- predict(m, f$x, decisionValues = TRUE)
+        g <- ll_golden_fit(data = f$x, target = f$y, type = type,
+                           cost = GOLDEN_COSTS[ci], bias = GOLDEN_BIASES[bi])
+        pd <- predict(g$model, f$x, decisionValues = TRUE)
         k <- golden_key("classif3", type, ci, bi)
-        expect_equal(pd$decisionValues, golden$decisionValues[[k]], tolerance = GOLDEN_TOL, label = k)
+        expect_golden(pd$decisionValues, golden$decisionValues[[k]],
+                      key = k, fit = g, exact_tol = GOLDEN_TOL)
       }
     }
   }
